@@ -11,7 +11,8 @@
     "storybook": "cross-env STORYBOOK=1 storybook dev -p 6006",
     "build-storybook": "cross-env STORYBOOK=1 storybook build",
     "chromatic": "cross-env STORYBOOK=1 chromatic --project-token=XXXX",
-    "test": "cross-env VITEST=true vitest"
+    "test": "cross-env VITEST=true vitest",
+    "postinstall": "npx -y @chakra-ui/cli typegen ./src/theme/system.ts"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.1",
