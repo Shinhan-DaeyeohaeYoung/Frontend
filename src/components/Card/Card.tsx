@@ -1,0 +1,49 @@
+import { Box, Flex, Text } from '@chakra-ui/react';
+
+interface CardProps {
+  image: React.ReactNode;
+  title?: string;
+  subtitle?: string;
+  extra?: React.ReactNode; // 우측 상단 영역
+}
+
+export const Card = ({ image, title, subtitle, extra }: CardProps) => {
+  return (
+    <Flex
+      border="1px solid"
+      borderColor="gray.300"
+      borderRadius="md"
+      overflow="hidden"
+      p={2}
+      align="flex-start"
+      transition="all 0.2s ease-in-out"
+      _hover={{
+        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)', // 아주 은은한 그림자
+        bg: 'gray.50', // 살짝 배경색 변경
+        cursor: 'pointer',
+      }}
+    >
+      <Box
+        w="80px"
+        h="80px"
+        bg="gray.100"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        {image}
+      </Box>
+      <Flex flex="1" direction="column" ml={3}>
+        <Flex justify="space-between" align="center">
+          <Text fontWeight="bold" color="gray.800">
+            {title}
+          </Text>
+          {extra}
+        </Flex>
+        <Text mt={1} fontSize="sm" color="gray.600">
+          {subtitle}
+        </Text>
+      </Flex>
+    </Flex>
+  );
+};
