@@ -27,9 +27,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       px={6}
       py={8}
       w="100%"
-      _dark={{
-        bg: bgColor ? undefined : 'gray.800',
-      }}
+      // _dark={{
+      //   bg: bgColor ? undefined : 'gray.800',
+      // }}
       {...rest}
     >
       <Stack gap={2} align={align === 'center' ? 'center' : 'flex-start'} textAlign={textAlign}>
@@ -50,6 +50,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             _dark={{ color: 'gray.300' }}
             maxW="md"
             lineHeight="relaxed"
+            whiteSpace="pre-line"
           >
             {subtitle}
           </Text>
