@@ -13,6 +13,7 @@ import AdminOverviewPage from '@/pages/admin/AdminOverviewPage';
 import AdminQrPage from '@/pages/admin/AdminQrPage';
 import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import AdminAccountPage from '@/pages/admin/AdminAccountPage';
+import RentPage from '@/pages/rent/RentPage';
 
 export default function AppRoutes() {
   return (
@@ -24,6 +25,7 @@ export default function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
 
       {/* 사용자 페이지 */}
+      <Route path="/rent" element={<RentPage />} />
       <Route path="/requests" element={<RequestsPage />} />
       <Route path="/qr/scan" element={<QrScanPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
