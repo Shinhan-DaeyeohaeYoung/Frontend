@@ -8,7 +8,8 @@ import {
   Text, 
   Container, 
   Button,
-  Portal
+  Portal,
+  VStack
 } from '@chakra-ui/react';
 import { Outlet } from 'react-router-dom';
 import bgImage from '@/assets/imgs/profile_bg.png';
@@ -45,16 +46,23 @@ function BackgroundLayer() {
 }
 
 export default function AppLayout({ children }: PropsWithChildren) {
-  // 1. 모달을 띄울 컨테이너의 ref입니다.
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // 2. zustand 모달 store를 사용합니다.
-  const { isModalOpen, modalTitle, modalCaption, modalBody, modalFooter, openModal, closeModal } = useModalStore();
+  const { 
+    isModalOpen, 
+    modalTitle, 
+    modalCaption, 
+    modalBody, 
+    modalFooter, 
+    modalFullscreen, // 풀스크린 상태 추가
+    openModal, 
+    closeModal 
+  } = useModalStore();
 
-  // 3. 모달을 여는 함수
+  // 일반 모달을 여는 함수
   const handleOpenModal = () => {
     openModal({
-      title: '앱 스크린 내부 모달',
+      title: '일반 모달',
       body: (
         <Text>
           이 모달은 오른쪽 앱 스크린 영역을 벗어나지 않습니다.
@@ -67,6 +75,57 @@ export default function AppLayout({ children }: PropsWithChildren) {
           <Button>저장</Button>
         </Flex>
       )
+    });
+  };
+
+  // 풀스크린 모달을 여는 함수
+  const handleOpenFullscreenModal = () => {
+    openModal({
+      title: '물품 번호: 14',
+      caption: '대표 사진 등록하기',
+      body: (
+        <VStack gap={4} align="stretch">
+          <Box
+            border="2px dashed"
+            borderColor="gray.300"
+            rounded="lg"
+            p={8}
+            textAlign="center"
+            bg="gray.50"
+            minH="200px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <VStack>
+              <Text fontSize="4xl">📷</Text>
+              <Text>대표 사진</Text>
+              <Text fontSize="sm" color="gray.500">
+                더블 클릭하여 선택하기
+              </Text>
+            </VStack>
+          </Box>
+          
+          <Box>
+            <Text fontSize="sm" color="gray.600" mb={2}>
+              물품 설명 물품 설명 물품 설명 물품 설명 물품 설명 물품 
+              설명 물품설명물품 설명 물품 설명 물품 설명 물품 설명물 
+              품 물품 설명물품
+            </Text>
+            
+            <Text fontSize="xs" color="gray.500">
+              • 오늘 대여단위에서 08:17까지 반납되어 입니다 (2주)
+              • QR 화이포니와에서 바 아람 키 아직 화이정씨
+            </Text>
+          </Box>
+        </VStack>
+      ),
+      footer: (
+        <Button w="full" onClick={closeModal}>
+          대여하기
+        </Button>
+      ),
+      fullscreen: true // 풀스크린 모드 활성화
     });
   };
 
@@ -100,18 +159,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
               caption={modalCaption}
               body={modalBody}
               footer={modalFooter}
+              fullscreen={modalFullscreen} // 풀스크린 prop 전달
             />
           </Portal>
 
           <Box
-            // 이 Box가 모달의 부모가 됩니다.
             ref={containerRef}
             position="relative"
             w="100%"
             maxW="520px"
             minW="375px"
             h="100dvh"
-            overflow="hidden" // Portal로 띄운 자식도 overflow:hidden의 영향을 받습니다.
+            overflow="hidden"
             bg="white"
             boxShadow={{ base: 'none', lg: 'lg' }}
             rounded={{ base: 'none', lg: '2xl' }}
@@ -120,12 +179,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
               maxW="560px"
               w="full"
               h="100dvh"
-              p={4} // 버튼이 보이도록 패딩 추가
+              p={4}
               overflowY="auto"
               style={{ overscrollBehavior: 'contain' }}
             >
-              {/* 3. 모달을 여는 테스트용 버튼입니다. */}
-              <Button onClick={handleOpenModal}>앱 스크린 안에 모달 열기</Button>
+              {/* 테스트용 버튼들 */}
+              <VStack gap={4} align="stretch">
+                <Button onClick={handleOpenFullscreenModal} colorScheme="blue">
+                  풀스크린 모달 열기
+                </Button>
+              </VStack>
 
               {children || <Outlet />}
             </Container>
