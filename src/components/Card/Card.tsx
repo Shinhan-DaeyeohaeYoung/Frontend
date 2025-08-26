@@ -5,9 +5,10 @@ interface CardProps {
   title?: string;
   subtitle?: string;
   extra?: React.ReactNode; // 우측 상단 영역
+  onClick?: () => void; // 클릭 이벤트 prop
 }
 
-export const Card = ({ image, title, subtitle, extra }: CardProps) => {
+export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
   return (
     <Flex
       border="1px solid"
@@ -22,6 +23,7 @@ export const Card = ({ image, title, subtitle, extra }: CardProps) => {
         bg: 'gray.50', // 살짝 배경색 변경
         cursor: 'pointer',
       }}
+      onClick={onClick}
     >
       <Box
         w="80px"
