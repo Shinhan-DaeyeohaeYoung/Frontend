@@ -26,6 +26,7 @@ export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
       onClick={onClick}
     >
       <Box
+        flexShrink={0} // 이미지 영역 고정
         w="80px"
         h="80px"
         bg="gray.100"
@@ -42,7 +43,16 @@ export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
           </Text>
           {extra}
         </Flex>
-        <Text mt={1} fontSize="sm" color="gray.600">
+        <Text
+          mt={1}
+          fontSize="sm"
+          color="gray.600"
+          wordBreak="break-word" // 긴 단어 강제 줄바꿈
+          overflowWrap="anywhere" // 어디서든 개행 허용
+          whiteSpace="normal"
+          lineClamp="2" // 2줄까지, 넘치면 …
+          textAlign="left"
+        >
           {subtitle}
         </Text>
       </Flex>
