@@ -5,7 +5,8 @@ import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButt
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/Card';
 import { SearchInput } from '@/components/Input';
-
+import { useModalStore } from '@/stores/modalStore';
+import ItemDetailModalContent from './components/ItemDetailModalContent';
 export default function RentPage() {
   const dummyContent =
     "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
@@ -49,6 +50,7 @@ export default function RentPage() {
 
   const [query, setQuery] = useState('');
   const [lastSearched, setLastSearched] = useState('');
+  const { openModal, closeModal } = useModalStore();
 
   const handleSearch = () => {
     // 이 자리에서 API 호출 또는 필터링 로직 실행
@@ -66,6 +68,22 @@ export default function RentPage() {
   ];
 
   const [selectedValue, setSelectedValue] = useState(basicOptions[0].value);
+
+  // 풀스크린 모달을 여는 함수
+  const handleOpenItemModal = (item) => {
+    openModal({
+      title: item?.title,
+      caption: '대표 사진 등록하기',
+      body: <ItemDetailModalContent itemId={item.itemId} />,
+      // footer: null,
+      // footer: (
+      //   <Button w="full" onClick={() => rentAction?.()}>
+      //     대여하기
+      //   </Button>
+      // ),
+      fullscreen: true, // 풀스크린 모드 활성화
+    });
+  };
 
   useEffect(() => {
     // alert('검색 api 실행');
@@ -112,7 +130,7 @@ export default function RentPage() {
             title={el?.name}
             subtitle={dummyContent}
             onClick={() => {
-              alert('모달 열기');
+              handleOpenItemModal(el);
             }}
           ></Card>
         ))}
