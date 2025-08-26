@@ -35,7 +35,7 @@ export const SegmentButtonGroup: React.FC<SegmentButtonGroupProps> = ({
   ...rest
 }) => {
   const buttonHeight = {
-    sm: '8',
+    sm: '6',
     md: '10',
     lg: '12',
   }[size];
@@ -73,7 +73,7 @@ export const SegmentButtonGroup: React.FC<SegmentButtonGroupProps> = ({
               fontSize={fontSize}
               h={buttonHeight}
               flex={isFullWidth ? 1 : undefined}
-              minW={isFullWidth ? undefined : '20'}
+              minW={isFullWidth ? undefined : '12'}
               variant={isSelected ? 'solid' : 'ghost'}
               colorPalette={isSelected ? colorPalette : 'gray'}
               bg={isSelected ? `${colorPalette}.500` : 'transparent'}
