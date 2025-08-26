@@ -4,7 +4,7 @@ import MainPage from '@/pages/MainPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import RequestsPage from '@/pages/RequestsPage';
-import QrScanPage from '@/pages/QrScanPage';
+import QrScanPage from '@/pages/qr/QrScanPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import RankingPage from '@/pages/RankingPage';
 import AccountPage from '@/pages/AccountPage';
