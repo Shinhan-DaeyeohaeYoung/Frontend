@@ -11,10 +11,11 @@ import {
   Image,
   SimpleGrid,
   Button,
+  Flex,
 } from '@chakra-ui/react';
 // import StickyActionButton from './StickyActionButton' // 쓰는 중이면
 
-// 파일 상단 (타입 선언 아래 아무데나)
+const formatKRW = (v: number) => `${v.toLocaleString('ko-KR')}원`;
 const MOCK_ITEM_DETAIL: ItemDetail = {
   id: 2,
   universityId: 1,
@@ -71,6 +72,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
   // ✅ 모달 내부 화면 상태
   const [view, setView] = useState<'detail' | 'selectUnit'>('detail');
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+  const [pendingSelectedUnitId, setPendingSelectedUnitId] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -79,6 +81,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
         if (!mounted) return;
         // 🔽 실제 API 대신 임시 데이터 주입
         setData(MOCK_ITEM_DETAIL);
+        setSelectedUnitId(MOCK_ITEM_DETAIL.units?.content?.[0]?.id);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -134,6 +137,30 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
   const mainPhoto = data.photos?.[0]?.key;
   const selectedUnit = data.units.content.find((u) => u.id === selectedUnitId) || null;
+  // ✔️ 상세/선택 화면 공통 하이라이트 기준
+  const highlightId = view === 'selectUnit' ? pendingSelectedUnitId : selectedUnitId;
+
+  const enterSelectView = () => {
+    // 현재 확정된 값이 있으면 그걸 기본값으로, 없으면 첫 번째 AVAILABLE
+    const fallback = availableUnits[0]?.id ?? null;
+    setPendingSelectedUnitId(selectedUnitId ?? fallback);
+    setPage(0); // 선택화면 진입 시 첫 페이지로 (선택)
+    setView('selectUnit');
+  };
+
+  // 취소: 임시 선택 버리고 상세로 복귀
+  const cancelSelect = () => {
+    setPendingSelectedUnitId(null);
+    setView('detail');
+  };
+
+  // 선택완료: 임시 선택을 확정(selectedUnitId)으로 반영
+  const confirmSelect = () => {
+    if (!pendingSelectedUnitId) return;
+    setSelectedUnitId(pendingSelectedUnitId);
+    setPendingSelectedUnitId(null);
+    setView('detail');
+  };
 
   return (
     <VStack align="stretch" gap={4} p={4} flex="1" minH="0">
@@ -150,11 +177,10 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
       >
         <HStack justify="space-between" align="center">
           <Text fontWeight="semibold">
-            {selectedUnit?.assetNo ? `물품 번호: ${selectedUnit.assetNo}` : data.name}
+            {selectedUnit?.assetNo ? `${data.name}(물품 번호: ${selectedUnit.assetNo})` : data.name}
           </Text>
-
           {view === 'detail' ? (
-            <Button size="sm" variant="outline" onClick={() => setView('selectUnit')}>
+            <Button size="sm" variant="outline" onClick={enterSelectView}>
               다른 물품 선택하기
             </Button>
           ) : (
@@ -168,10 +194,13 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
       {/* ── 상세 화면 ───────────────────────────────────────────── */}
       {view === 'detail' && (
         <>
-          <AspectRatio ratio={16 / 9} w="100%">
+          <AspectRatio ratio={16 / 9} w="100%" h="360px">
             {mainPhoto ? (
               <Image
-                src={/* getAssetUrl(mainPhoto) */ undefined}
+                // [todo]: 이미지 주소 응답값을 수정
+                src={
+                  /* getAssetUrl(mainPhoto) */ 'https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg'
+                }
                 alt={data.name}
                 objectFit="cover"
                 bg="gray.100"
@@ -189,56 +218,40 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
               </Box>
             )}
           </AspectRatio>
+          <Box bg={'gray.100'} w={'100%'} h="1px"></Box>
+          {/* <Box bg={'gray.100'} w={'cal(100% + 30px)'} h="1px" mx={'-30px'}></Box> */}
 
-          <Text mt={1} fontSize="sm" color="gray.600" whiteSpace="pre-line">
-            {data.description || '설명이 없습니다.'}
-          </Text>
+          <Flex
+            justify={'space-between'}
+            // borderTop={'1px solid black'}
+            // borderBottom={'1px solid black'}
+            py={1}
+            px={1}
+          >
+            <Text textAlign={'right'} color={'gray.500'}>
+              보증금
+            </Text>
+            <Text textAlign={'right'} fontWeight={'semibold'}>
+              {formatKRW(data.deposit)}
+            </Text>
+          </Flex>
 
           <SimpleGrid columns={{ base: 3, md: 3 }} gap={3}>
             <Info label="최대 대여기간" value={`${data.maxRentalDays}일`} />
             <Info label="보유수량" value={`${data.totalQuantity}개`} />
             <Info label="대여가능" value={`${data.availableQuantity}개`} />
           </SimpleGrid>
-
-          <HStack flexWrap="wrap" gap={2}>
-            {Object.entries(data.unitStats).map(([k, v]) => (
-              <Badge key={k} variant="subtle" colorScheme={k === 'AVAILABLE' ? 'green' : 'gray'}>
-                {k}: {v}
-              </Badge>
-            ))}
-          </HStack>
-
-          <Box>
-            <Text fontWeight="semibold" mb={2}>
-              대여 단위
+          <Box bg={'gray.100'} w={'100%'} h="1px"></Box>
+          <Box bg={'gray.100'} rounded={'sm'} p={3} minH={'160px'}>
+            <Text mt={1} fontSize="sm" color="gray.600" whiteSpace="pre-line">
+              {data.description || '설명이 없습니다.'}
             </Text>
-            <VStack align="stretch" gap={2}>
-              {data.units.content.map((u) => (
-                <HStack
-                  key={u.id}
-                  justify="space-between"
-                  p={3}
-                  border="1px solid"
-                  borderColor={u.id === selectedUnitId ? 'blue.400' : 'gray.200'}
-                  rounded="md"
-                  bg="white"
-                  cursor="pointer"
-                  onClick={() => setSelectedUnitId(u.id)}
-                >
-                  <Text fontSize="sm">자산번호 #{u.assetNo}</Text>
-                  <Badge colorScheme={u.status === 'AVAILABLE' ? 'green' : 'gray'}>
-                    {u.status}
-                  </Badge>
-                </HStack>
-              ))}
-            </VStack>
           </Box>
-
           {/* 하단 대여 버튼 */}
-          <Box position="sticky" bottom={0} bg="white" pt={2} pb={4}>
+          <Box position="sticky" bottom={0}>
             <Button
               w="full"
-              colorScheme="blue"
+              //   colorScheme="blue"
               onClick={rent}
               loading={renting}
               disabled={!canRent}
@@ -256,7 +269,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
           <SimpleGrid columns={2} gap={3}>
             {pagedUnits.map((u) => {
-              const active = u.id === selectedUnitId;
+              const active = u.id === highlightId; // ✅ 기존: selectedUnitId → 수정: highlightId
               return (
                 <VStack
                   key={u.id}
@@ -267,7 +280,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
                   p={3}
                   gap={2}
                   cursor="pointer"
-                  onClick={() => setSelectedUnitId(u.id)}
+                  onClick={() => setPendingSelectedUnitId(u.id)} // ✅ 확정 아님, 임시만
                 >
                   <Box
                     w="100%"
@@ -312,14 +325,14 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
           {/* 하단 선택완료 버튼 */}
           <Box position="sticky" bottom={0} bg="white" pt={2} pb={4}>
             <HStack gap={2}>
-              <Button flex="1" variant="outline" onClick={() => setView('detail')}>
+              <Button flex="1" variant="outline" onClick={cancelSelect}>
                 취소
               </Button>
               <Button
                 flex="2"
                 colorScheme="blue"
-                onClick={() => setView('detail')}
-                disabled={!selectedUnitId}
+                onClick={confirmSelect}
+                disabled={!pendingSelectedUnitId} // ✅ 임시 선택 없으면 비활성
               >
                 선택완료
               </Button>
