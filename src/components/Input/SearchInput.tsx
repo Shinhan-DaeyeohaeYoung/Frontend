@@ -53,7 +53,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const inputId = id || `search-input-${name || 'default'}`;
 
   return (
-    <Group gap={2} w="full" maxW="sm">
+    <Group gap={2} w="full">
       <TextInput
         flex="1"
         id={inputId}
