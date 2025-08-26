@@ -1,68 +1,121 @@
-import { Box, Heading, Text, VStack, Button, HStack, Badge } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack, Button, HStack, Badge, Flex, Image } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
+import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
+import { useEffect, useState } from 'react';
+import { Card } from '@/components/Card';
+import { SearchInput } from '@/components/Input';
 
 export default function RentPage() {
+  const dummyContent =
+    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
+  const response = {
+    content: [
+      {
+        id: 1,
+        universityId: 1,
+        organizationId: 2,
+        name: '충전기',
+        totalQuantity: 2,
+        availableQuantity: 2,
+        isActive: true,
+        coverKey: 'univ/1/items/1/units/501.jpg',
+      },
+      {
+        id: 1,
+        universityId: 1,
+        organizationId: 2,
+        name: '충전기',
+        totalQuantity: 2,
+        availableQuantity: 2,
+        isActive: true,
+        coverKey: 'univ/1/items/1/units/501.jpg',
+      },
+      {
+        id: 1,
+        universityId: 1,
+        organizationId: 2,
+        name: '충전기',
+        totalQuantity: 2,
+        availableQuantity: 2,
+        isActive: true,
+        coverKey: 'univ/1/items/1/units/501.jpg',
+      },
+    ],
+    page: 0,
+    size: 20,
+    totalElements: 1,
+  };
+
+  const [query, setQuery] = useState('');
+  const [lastSearched, setLastSearched] = useState('');
+
+  const handleSearch = () => {
+    // 이 자리에서 API 호출 또는 필터링 로직 실행
+    setLastSearched(query);
+    console.log('검색 실행:', query);
+  };
+
+  const [data, setData] = useState(response.content);
+
+  const basicOptions: SegmentOption[] = [
+    { value: 'all', label: '전체' },
+    { value: 'school', label: '학교' },
+    { value: 'middle', label: '총학' },
+    { value: 'subject', label: '학과' },
+  ];
+
+  const [selectedValue, setSelectedValue] = useState(basicOptions[0].value);
+
+  useEffect(() => {
+    // alert('검색 api 실행');
+  }, [selectedValue]);
+
   return (
     <Box>
       <PageHeader
+        px={0}
+        py={10}
+        bgColor={'transparent'}
         title={'대여해요'}
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>
-      <VStack gap={6} align="stretch">
-        <HStack justify="space-between" align="center">
-          <Heading size="lg" color="green.600">
-            📝 신청해요 게시판
-          </Heading>
-          <Button colorScheme="green" size="sm">
-            새 글 작성
-          </Button>
-        </HStack>
 
-        <VStack gap={4} align="stretch">
-          <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-            <HStack justify="space-between" mb={2}>
-              <Text fontWeight="bold">노트북 대여 신청합니다</Text>
-              <Badge colorScheme="green">승인됨</Badge>
-            </HStack>
-            <Text fontSize="sm" color="gray.600">
-              2024.01.15 ~ 2024.01.20
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              학습 목적으로 노트북이 필요합니다.
-            </Text>
-          </Box>
+      <Flex flexDir={'column'} justify="flex-end" mt={2}>
+        <SearchInput
+          placeholder="물품명을 입력해주세요"
+          buttonText="검색"
+          value={query}
+          onChange={setQuery}
+          onSearch={handleSearch}
+          size="md"
+          variant="outline"
+          name="itemSearch"
+        />
 
-          <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-            <HStack justify="space-between" mb={2}>
-              <Text fontWeight="bold">프로젝터 대여 신청</Text>
-              <Badge colorScheme="yellow">검토중</Badge>
-            </HStack>
-            <Text fontSize="sm" color="gray.600">
-              2024.01.18 ~ 2024.01.19
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              발표 준비를 위해 프로젝터가 필요합니다.
-            </Text>
-          </Box>
+        <SegmentButtonGroup
+          ml={'auto'}
+          mr={0}
+          size="sm"
+          options={basicOptions}
+          value={selectedValue}
+          onChange={setSelectedValue}
+        />
+      </Flex>
 
-          <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-            <HStack justify="space-between" mb={2}>
-              <Text fontWeight="bold">카메라 대여 신청</Text>
-              <Badge colorScheme="red">반려됨</Badge>
-            </HStack>
-            <Text fontSize="sm" color="gray.600">
-              2024.01.22 ~ 2024.01.25
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              동아리 활동을 위해 카메라가 필요합니다.
-            </Text>
-          </Box>
-        </VStack>
-
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/main">← 메인으로 돌아가기</Link>
-        </Button>
+      <VStack gap={2} align="stretch" mt={2}>
+        {data.map((el) => (
+          <Card
+            image={
+              <Image src="https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg" />
+            }
+            title={el?.name}
+            subtitle={dummyContent}
+            onClick={() => {
+              alert('모달 열기');
+            }}
+          ></Card>
+        ))}
       </VStack>
     </Box>
   );
