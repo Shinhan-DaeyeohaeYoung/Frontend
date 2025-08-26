@@ -1,15 +1,16 @@
-import type { Preview } from "@storybook/react"
-import React from "react"
-import { Provider } from "../src/components/ui/provider"
+import type { Preview } from '@storybook/react';
+import React from 'react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { system } from '../src/theme/system';
 
 const preview: Preview = {
   decorators: [
     (Story) => (
-      <Provider>
+      <ChakraProvider value={system}>
         <Story />
-      </Provider>
+      </ChakraProvider>
     ),
   ],
-}
+};
 
-export default preview
+export default preview;

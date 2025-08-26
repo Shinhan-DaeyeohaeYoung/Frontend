@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Input, InputGroup, InputElement, Box } from '@chakra-ui/react';
-import { Button } from '../Button/Button';
+import { Group, Button } from '@chakra-ui/react';
+import TextInput from './TextInput';
 
 export interface SearchInputProps {
   placeholder?: string;
@@ -10,7 +10,7 @@ export interface SearchInputProps {
   onSearch?: () => void;
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'outline' | 'filled' | 'flushed' | 'unstyled';
+  variant?: 'outline' | 'flushed' | 'subtle';
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
@@ -27,7 +27,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChange,
   onSearch,
   disabled = false,
-  size = 'lg',
+  size = 'md',
   variant = 'outline',
   isInvalid = false,
   isReadOnly = false,
@@ -37,10 +37,6 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   'aria-label': ariaLabel,
   'aria-describedby': ariaDescribedby,
 }) => {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange?.(e.target.value);
-  };
-
   const handleSearch = () => {
     if (!disabled && value.trim()) {
       onSearch?.();
@@ -57,62 +53,50 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const inputId = id || `search-input-${name || 'default'}`;
 
   return (
-    <Box>
-      <InputGroup size={size}>
-        <Input
-          id={inputId}
-          name={name}
-          placeholder={placeholder}
-          value={value}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          aria-invalid={isInvalid}
-          aria-required={isRequired}
-          readOnly={isReadOnly}
-          variant={variant}
-          aria-label={
-            ariaLabel ||
-            `검색어를 입력하세요. ${buttonText} 버튼을 클릭하거나 Enter 키를 눌러 검색할 수 있습니다.`
-          }
-          aria-describedby={ariaDescribedby}
-          autoComplete="off"
-          spellCheck="false"
-          _focus={{
-            borderColor: 'blue.400',
-            boxShadow: '0 0 0 1px var(--chakra-colors-blue-400)',
-          }}
-          _focusVisible={{
-            borderColor: 'blue.400',
-            boxShadow: '0 0 0 1px var(--chakra-colors-blue-400)',
-          }}
-          _placeholder={{
-            color: 'gray.500',
-          }}
-          _invalid={{
-            borderColor: 'red.500',
-            boxShadow: '0 0 0 1px var(--chakra-colors-red-500)',
-          }}
-          _disabled={{
-            opacity: 0.6,
-            cursor: 'not-allowed',
-          }}
-        />
-        <InputElement placement="end" width="auto" pr={0}>
-          <Button
-            label={buttonText}
-            variant="default"
-            size="md"
-            onClick={handleSearch}
-            disabled={disabled}
-            borderRadius="0 md md 0"
-            borderLeftRadius={0}
-            h="100%"
-            aria-describedby={inputId}
-          />
-        </InputElement>
-      </InputGroup>
-    </Box>
+    <Group gap={2} w="full" maxW="sm">
+      <TextInput
+        flex="1"
+        id={inputId}
+        name={name}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        _invalid={isInvalid ? { borderColor: 'red.500' } : undefined}
+        readOnly={isReadOnly}
+        required={isRequired}
+        variant={variant}
+        size={size}
+        borderRadius="md"
+        borderColor="gray.300"
+        aria-label={
+          ariaLabel ||
+          `검색어를 입력하세요. ${buttonText} 버튼을 클릭하거나 Enter 키를 눌러 검색할 수 있습니다.`
+        }
+        aria-describedby={ariaDescribedby}
+      />
+      <Button
+        onClick={handleSearch}
+        disabled={disabled || !value.trim()}
+        variant="outline"
+        size={size}
+        bg="white"
+        borderColor="gray.300"
+        color="gray.700"
+        borderRadius="md"
+        _hover={{
+          bg: 'gray.50',
+          borderColor: 'gray.400',
+        }}
+        _active={{
+          bg: 'gray.100',
+        }}
+        aria-describedby={inputId}
+      >
+        {buttonText}
+      </Button>
+    </Group>
   );
 };
 
