@@ -5,10 +5,11 @@ interface CardProps {
   title?: string;
   subtitle?: string;
   extra?: React.ReactNode; // 우측 상단 영역
+  bottomExtra?: React.ReactNode; // 하단 영역
   onClick?: () => void; // 클릭 이벤트 prop
 }
 
-export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
+export const Card = ({ image, title, subtitle, extra, onClick, bottomExtra }: CardProps) => {
   return (
     <Flex
       border="1px solid"
@@ -55,6 +56,11 @@ export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
         >
           {subtitle}
         </Text>
+        {bottomExtra && (
+          <Box mt={2} alignSelf="flex-start" w="auto">
+            {bottomExtra}
+          </Box>
+        )}
       </Flex>
     </Flex>
   );
