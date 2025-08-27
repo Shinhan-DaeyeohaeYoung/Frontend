@@ -1,5 +1,5 @@
 // src/components/layout/AppHeader.tsx
-import { Flex, IconButton, Box, useToken } from '@chakra-ui/react';
+import { Flex, IconButton, Box } from '@chakra-ui/react';
 import { BiMenu, BiArrowBack, BiQr, BiHome } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,9 +22,6 @@ export default function AppHeader({
   onHomeClick,
 }: AppHeaderProps) {
   const navigate = useNavigate();
-
-  // 토큰 기반 스페이싱
-  const [headerHeight, headerPadding] = useToken('sizes', ['60px', '4']);
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -62,14 +59,11 @@ export default function AppHeader({
     <Flex
       as="header"
       align="center"
-      px={headerPadding}
-      py={3}
-      h={headerHeight}
       borderBottomWidth="1px"
       borderBottomColor="gray.200"
       bg="white/80"
       position="sticky"
-      top={0}
+      p={2}
       zIndex={10}
       backdropFilter="blur(8px)"
       transition="all 0.2s"
