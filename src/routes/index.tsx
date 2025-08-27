@@ -16,6 +16,7 @@ import AdminAccountPage from '@/pages/admin/AdminAccountPage';
 import RentPage from '@/pages/rent/RentPage';
 import ReturnListPage from '@/pages/return/ReturnListPage';
 import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
+import AdminItemOverviewPage from '@/pages/admin/AdminItemOverviewPage';
 
 export default function AppRoutes() {
   return (
@@ -39,6 +40,7 @@ export default function AppRoutes() {
       {/* 관리자 페이지 */}
       <Route path="/admin" element={<AdminMainPage />} />
       <Route path="/admin/overview" element={<AdminOverviewPage />} />
+      <Route path="/admin/overview/:itemId" element={<AdminItemOverviewPage />} />
       <Route path="/admin/qr" element={<AdminQrPage />} />
       <Route path="/admin/reports" element={<AdminReportsPage />} />
       <Route path="/admin/account" element={<AdminAccountPage />} />
