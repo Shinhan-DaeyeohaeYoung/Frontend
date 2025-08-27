@@ -5,10 +5,11 @@ interface CardProps {
   title?: string;
   subtitle?: string;
   extra?: React.ReactNode; // 우측 상단 영역
+  bottomExtra?: React.ReactNode; // 하단 영역
   onClick?: () => void; // 클릭 이벤트 prop
 }
 
-export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
+export const Card = ({ image, title, subtitle, extra, onClick, bottomExtra }: CardProps) => {
   return (
     <Flex
       border="1px solid"
@@ -26,6 +27,7 @@ export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
       onClick={onClick}
     >
       <Box
+        flexShrink={0} // 이미지 영역 고정
         w="80px"
         h="80px"
         bg="gray.100"
@@ -42,9 +44,23 @@ export const Card = ({ image, title, subtitle, extra, onClick }: CardProps) => {
           </Text>
           {extra}
         </Flex>
-        <Text mt={1} fontSize="sm" color="gray.600">
+        <Text
+          mt={1}
+          fontSize="sm"
+          color="gray.600"
+          wordBreak="break-word" // 긴 단어 강제 줄바꿈
+          overflowWrap="anywhere" // 어디서든 개행 허용
+          whiteSpace="normal"
+          lineClamp="2" // 2줄까지, 넘치면 …
+          textAlign="left"
+        >
           {subtitle}
         </Text>
+        {bottomExtra && (
+          <Box mt={2} alignSelf="flex-start" w="auto">
+            {bottomExtra}
+          </Box>
+        )}
       </Flex>
     </Flex>
   );
