@@ -43,7 +43,7 @@ export default function AppHeader({
     if (onQRClick) {
       onQRClick();
     } else {
-      console.log('QR 스캔 클릭');
+      navigate('/admin/qr');
     }
   };
 

@@ -102,6 +102,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
           display={{ base: 'none', lg: 'flex' }}
           alignItems="center"
           justifyContent="flex-start"
+          pointerEvents="none"
+          zIndex={0}
         >
           <PcMent />
         </GridItem>
@@ -146,10 +148,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 <AppHeader
                   frame={headerFrame}
                   // 필요한 경우 콜백 함수들을 props로 전달
-                  onMenuClick={() => console.log('메뉴 클릭')}
-                  onBackClick={() => console.log('뒤로가기 클릭')}
-                  onQRClick={() => console.log('QR 스캔 클릭')}
-                  onHomeClick={() => console.log('홈 클릭')}
                 />
               )}
 
