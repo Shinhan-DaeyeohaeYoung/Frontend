@@ -1,194 +1,179 @@
-import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  Button,
-  SimpleGrid,
-  HStack,
-  Badge,
-  Input,
-} from '@chakra-ui/react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Box, VStack, Container, Text } from '@chakra-ui/react';
+import { Button } from '@/components/Button'; // 경로는 프로젝트 구조에 맞게 조정
+import { PageHeader } from '@/components/PageHeader'; // 경로는 프로젝트 구조에 맞게 조정
+
+type PageState = 'main' | 'rental' | 'return';
 
 export default function AdminQrPage() {
-  return (
-    <Box p={6}>
-      <VStack gap={8} align="center">
-        <Heading size="xl" color="purple.600">
-          📱 QR 관리
-        </Heading>
+  const [currentPage, setCurrentPage] = useState<PageState>('main');
+  const [countdown, setCountdown] = useState<number>(0);
 
-        <Text fontSize="lg" textAlign="center" color="gray.600">
-          QR 코드 생성 및 관리 시스템입니다
+  // 카운트다운 로직
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0 && currentPage !== 'main') {
+      // 카운트다운이 끝나면 메인 페이지로 돌아감
+      setCurrentPage('main');
+    }
+  }, [countdown, currentPage]);
+
+  const handleRentalClick = () => {
+    setCurrentPage('rental');
+    setCountdown(50);
+  };
+
+  const handleReturnClick = () => {
+    setCurrentPage('return');
+    setCountdown(50);
+  };
+
+  const handleRefreshQR = () => {
+    // QR 새로고침 시 카운트다운을 다시 50초로 리셋
+    setCountdown(50);
+  };
+
+  const getPageTitle = () => {
+    switch (currentPage) {
+      case 'rental':
+        return '대여하기';
+      case 'return':
+        return '반납하기';
+      default:
+        return 'QR 페이지';
+    }
+  };
+
+  const getPageSubtitle = () => {
+    switch (currentPage) {
+      case 'rental':
+      case 'return':
+        return undefined;
+      default:
+        return '대여관련 설명\n대여하기 버튼을\n누른 뒤에\nQR 찍어주세요';
+    }
+  };
+
+  const renderMainContent = () => {
+    if (currentPage === 'main') {
+      return (
+        <VStack gap={4} w="full">
+          <Button
+            label="대여하기(QR 띄우기)"
+            size="lg"
+            w="full"
+            bg="#ff4d8d"
+            color="white"
+            _hover={{ bg: '#e63d7a' }}
+            borderRadius="xl"
+            py={6}
+            onClick={handleRentalClick}
+          />
+
+          <Button
+            label="반납하기(QR 띄우기)"
+            size="lg"
+            w="full"
+            bg="gray.100"
+            color="gray.600"
+            _hover={{ bg: 'gray.200' }}
+            borderRadius="xl"
+            py={6}
+            onClick={handleReturnClick}
+          />
+        </VStack>
+      );
+    }
+
+    // QR 화면 (대여하기 또는 반납하기)
+    return (
+      <VStack gap={6} w="full">
+        {/* QR 코드 영역 */}
+        <Box
+          bg="white"
+          p={8}
+          borderRadius="2xl"
+          w="300px"
+          h="300px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          border="2px solid"
+          borderColor="gray.200"
+        >
+          {/* 실제 QR 코드가 들어갈 자리 - 임시로 QR 패턴 표시 */}
+          <Box
+            w="250px"
+            h="250px"
+            bg="black"
+            backgroundImage={`
+              repeating-linear-gradient(
+                0deg,
+                black,
+                black 10px,
+                white 10px,
+                white 20px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                black,
+                black 10px,
+                white 10px,
+                white 20px
+              )
+            `}
+            backgroundBlendMode="multiply"
+            borderRadius="lg"
+          />
+        </Box>
+
+        {/* 카운트다운 */}
+        <Text fontSize="xl" fontWeight="bold" color="gray.700">
+          {countdown}초 ~ 0초
         </Text>
 
-        {/* QR 생성 폼 */}
-        <Box w="full" maxW="600px" p={6} border="1px solid" borderColor="gray.200" rounded="lg">
-          <Heading size="md" mb={4} color="gray.700">
-            🆕 새 QR 코드 생성
-          </Heading>
-          <VStack gap={4} align="stretch">
-            <Box>
-              <Text fontWeight="medium" mb={2}>
-                장비명
-              </Text>
-              <Input placeholder="노트북 A-001" />
-            </Box>
-
-            <Box>
-              <Text fontWeight="medium" mb={2}>
-                장비 타입
-              </Text>
-              <Input placeholder="노트북" />
-            </Box>
-
-            <Box>
-              <Text fontWeight="medium" mb={2}>
-                위치
-              </Text>
-              <Input placeholder="도서관 2층" />
-            </Box>
-
-            <Button colorScheme="purple" size="lg">
-              QR 코드 생성
-            </Button>
-          </VStack>
-        </Box>
-
-        {/* QR 코드 목록 */}
-        <Box w="full" maxW="800px">
-          <Heading size="md" mb={4} color="gray.700">
-            📋 등록된 QR 코드 목록
-          </Heading>
-          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-              <HStack justify="space-between" mb={2}>
-                <Text fontWeight="bold">노트북 A-001</Text>
-                <Badge colorScheme="green">활성</Badge>
-              </HStack>
-              <Text fontSize="sm" color="gray.600">
-                타입: 노트북
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                위치: 도서관 2층
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                생성일: 2024.01.10
-              </Text>
-              <HStack mt={3} gap={2}>
-                <Button size="sm" colorScheme="blue">
-                  다운로드
-                </Button>
-                <Button size="sm" variant="outline">
-                  수정
-                </Button>
-                <Button size="sm" variant="outline" colorScheme="red">
-                  비활성화
-                </Button>
-              </HStack>
-            </Box>
-
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-              <HStack justify="space-between" mb={2}>
-                <Text fontWeight="bold">프로젝터 P-001</Text>
-                <Badge colorScheme="green">활성</Badge>
-              </HStack>
-              <Text fontSize="sm" color="gray.600">
-                타입: 프로젝터
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                위치: 강의실 101
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                생성일: 2024.01.08
-              </Text>
-              <HStack mt={3} gap={2}>
-                <Button size="sm" colorScheme="blue">
-                  다운로드
-                </Button>
-                <Button size="sm" variant="outline">
-                  수정
-                </Button>
-                <Button size="sm" variant="outline" colorScheme="red">
-                  비활성화
-                </Button>
-              </HStack>
-            </Box>
-
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-              <HStack justify="space-between" mb={2}>
-                <Text fontWeight="bold">카메라 C-001</Text>
-                <Badge colorScheme="red">비활성</Badge>
-              </HStack>
-              <Text fontSize="sm" color="gray.600">
-                타입: 카메라
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                위치: 미디어실
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                생성일: 2024.01.05
-              </Text>
-              <HStack mt={3} gap={2}>
-                <Button size="sm" colorScheme="blue">
-                  다운로드
-                </Button>
-                <Button size="sm" variant="outline">
-                  수정
-                </Button>
-                <Button size="sm" colorScheme="green">
-                  활성화
-                </Button>
-              </HStack>
-            </Box>
-
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-              <HStack justify="space-between" mb={2}>
-                <Text fontWeight="bold">태블릿 T-001</Text>
-                <Badge colorScheme="green">활성</Badge>
-              </HStack>
-              <Text fontSize="sm" color="gray.600">
-                타입: 태블릿
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                위치: 학습지원센터
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                생성일: 2024.01.12
-              </Text>
-              <HStack mt={3} gap={2}>
-                <Button size="sm" colorScheme="blue">
-                  다운로드
-                </Button>
-                <Button size="sm" variant="outline">
-                  수정
-                </Button>
-                <Button size="sm" variant="outline" colorScheme="red">
-                  비활성화
-                </Button>
-              </HStack>
-            </Box>
-          </SimpleGrid>
-        </Box>
-
-        {/* 액션 버튼 */}
-        <HStack gap={4} wrap="wrap" justify="center">
-          <Button colorScheme="purple" size="lg">
-            일괄 생성
-          </Button>
-          <Button colorScheme="blue" size="lg">
-            목록 내보내기
-          </Button>
-          <Button variant="outline" size="lg">
-            QR 코드 통계
-          </Button>
-        </HStack>
-
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/admin">← 관리자 메인으로 돌아가기</Link>
-        </Button>
+        {/* QR 새로고침 버튼 */}
+        <Button
+          label="QR 새로고침"
+          size="lg"
+          w="full"
+          bg="white"
+          border="2px"
+          borderColor="gray.300"
+          color="gray.700"
+          _hover={{
+            borderColor: '#ff4d8d',
+            color: '#ff4d8d',
+          }}
+          borderRadius="xl"
+          py={6}
+          onClick={handleRefreshQR}
+        />
       </VStack>
+    );
+  };
+
+  return (
+    <Box minH="100vh" bgGradient="linear(to-b, #ff4d8d, #7a5cf5)">
+      <Container maxW="md" py={0}>
+        <VStack gap={6} align="stretch">
+          {/* 헤더 */}
+          <PageHeader
+            title={getPageTitle()}
+            subtitle={getPageSubtitle()}
+            align="center"
+            bgColor="transparent"
+            color="white"
+          />
+
+          {/* 메인 카드 */}
+          <Box bg="white" shadow="xl" borderRadius="2xl" p={8}>
+            {renderMainContent()}
+          </Box>
+        </VStack>
+      </Container>
     </Box>
   );
 }
