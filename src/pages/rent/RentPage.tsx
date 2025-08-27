@@ -87,6 +87,30 @@ export default function RentPage() {
     });
   };
 
+  const handleOpenBookModal = (item) => {
+    openModal({
+      title: '물품을 예약할까요?',
+      caption: '물품을 대여할 수 있게 되면 자동으로 홀딩됩니다!',
+      footer: (
+        <Button
+          w="full"
+          onClick={() => {
+            handleBook(item.id);
+          }}
+          label="예약하기"
+        ></Button>
+      ),
+    });
+  };
+
+  const handleBook = () => {
+    // api 요청
+    try {
+      alert('api 요청');
+      closeModal();
+    } catch {}
+  };
+
   useEffect(() => {
     // alert('검색 api 실행');  [todo]: api 연동
   }, [selectedValue]);
@@ -150,8 +174,11 @@ export default function RentPage() {
                     label={'대여하기'}
                     onClick={() => {
                       // if (canRent) {
-                      handleOpenItemModal(el);
+                      // handleOpenItemModal(el);
                       // }
+                      if (canBook) {
+                        handleOpenBookModal(el);
+                      }
                     }}
                     // disabled={!canRent || !canBook}
                   >
