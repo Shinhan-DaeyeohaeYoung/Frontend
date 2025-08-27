@@ -66,8 +66,7 @@ export default function RentPage() {
 
   const { openModal, closeModal } = useModalStore();
 
-  const [data, setData] = useState(response.content);
-
+  const [data] = useState(response.content);
   // 풀스크린 모달을 여는 함수
   const handleOpenItemModal = (item: any) => {
     openModal({
