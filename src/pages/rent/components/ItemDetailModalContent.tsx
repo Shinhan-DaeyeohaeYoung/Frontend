@@ -163,8 +163,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
   };
 
   return (
-    <VStack align="stretch" gap={4} p={4} flex="1" minH="0">
-      {/* ✅ 모달 내부 상단 전환 바 (sticky) */}
+    <Box display="flex" flexDirection="column" h="100%" overflow="hidden">
       <Box
         position="sticky"
         top={0}
@@ -190,65 +189,67 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
           )}
         </HStack>
       </Box>
+      <VStack align="stretch" gap={4} p={4} flex="1" overflowY="auto">
+        {/* ✅ 모달 내부 상단 전환 바 (sticky) */}
 
-      {/* ── 상세 화면 ───────────────────────────────────────────── */}
-      {view === 'detail' && (
-        <>
-          <AspectRatio ratio={16 / 9} w="100%" h="360px">
-            {mainPhoto ? (
-              <Image
-                // [todo]: 이미지 주소 응답값을 수정
-                src={
-                  /* getAssetUrl(mainPhoto) */ 'https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg'
-                }
-                alt={data.name}
-                objectFit="cover"
-                bg="gray.100"
-              />
-            ) : (
-              <Box
-                border="2px dashed"
-                borderColor="gray.300"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                bg="gray.50"
-              >
-                <Text color="gray.500">대표 사진이 없습니다</Text>
-              </Box>
-            )}
-          </AspectRatio>
-          <Box bg={'gray.100'} w={'100%'} h="1px"></Box>
-          {/* <Box bg={'gray.100'} w={'cal(100% + 30px)'} h="1px" mx={'-30px'}></Box> */}
+        {/* ── 상세 화면 ───────────────────────────────────────────── */}
+        {view === 'detail' && (
+          <>
+            <AspectRatio ratio={16 / 9} w="100%" h="360px">
+              {mainPhoto ? (
+                <Image
+                  // [todo]: 이미지 주소 응답값을 수정
+                  src={
+                    /* getAssetUrl(mainPhoto) */ 'https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg'
+                  }
+                  alt={data.name}
+                  objectFit="cover"
+                  bg="gray.100"
+                />
+              ) : (
+                <Box
+                  border="2px dashed"
+                  borderColor="gray.300"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  bg="gray.50"
+                >
+                  <Text color="gray.500">대표 사진이 없습니다</Text>
+                </Box>
+              )}
+            </AspectRatio>
+            <Box bg={'gray.100'} w={'100%'} h="1px"></Box>
+            {/* <Box bg={'gray.100'} w={'cal(100% + 30px)'} h="1px" mx={'-30px'}></Box> */}
 
-          <Flex
-            justify={'space-between'}
-            // borderTop={'1px solid black'}
-            // borderBottom={'1px solid black'}
-            py={1}
-            px={1}
-          >
-            <Text textAlign={'right'} color={'gray.500'}>
-              보증금
-            </Text>
-            <Text textAlign={'right'} fontWeight={'semibold'}>
-              {formatKRW(data.deposit)}
-            </Text>
-          </Flex>
+            <Flex
+              justify={'space-between'}
+              // borderTop={'1px solid black'}
+              // borderBottom={'1px solid black'}
+              py={1}
+              px={1}
+            >
+              <Text textAlign={'right'} color={'gray.500'}>
+                보증금
+              </Text>
+              <Text textAlign={'right'} fontWeight={'semibold'}>
+                {formatKRW(data.deposit)}
+              </Text>
+            </Flex>
 
-          <SimpleGrid columns={{ base: 3, md: 3 }} gap={3}>
-            <Info label="최대 대여기간" value={`${data.maxRentalDays}일`} />
-            <Info label="보유수량" value={`${data.totalQuantity}개`} />
-            <Info label="대여가능" value={`${data.availableQuantity}개`} />
-          </SimpleGrid>
-          <Box bg={'gray.100'} w={'100%'} h="1px"></Box>
-          <Box bg={'gray.100'} rounded={'sm'} p={3} minH={'160px'}>
-            <Text mt={1} fontSize="sm" color="gray.600" whiteSpace="pre-line">
-              {data.description || '설명이 없습니다.'}
-            </Text>
-          </Box>
-          {/* 하단 대여 버튼 */}
-          <Box position="sticky" bottom={0}>
+            <SimpleGrid columns={{ base: 3, md: 3 }} gap={3}>
+              <Info label="최대 대여기간" value={`${data.maxRentalDays}일`} />
+              <Info label="보유수량" value={`${data.totalQuantity}개`} />
+              <Info label="대여가능" value={`${data.availableQuantity}개`} />
+            </SimpleGrid>
+            <Box bg={'gray.100'} w={'100%'} h="1px"></Box>
+            <Box bg={'gray.100'} rounded={'sm'} p={3} minH={'160px'}>
+              <Text mt={1} fontSize="sm" color="gray.600" whiteSpace="pre-line">
+                {data.description || '설명이 없습니다.'}
+              </Text>
+            </Box>
+            {/* 하단 대여 버튼 */}
+            {/* <Box position="sticky" bottom={0}>
             <Button
               w="full"
               //   colorScheme="blue"
@@ -258,89 +259,97 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
             >
               {canRent ? '대여하기' : '대여 불가'}
             </Button>
-          </Box>
-        </>
-      )}
+          </Box> */}
+          </>
+        )}
 
-      {/* ── 전체 선택 화면 ──────────────────────────────────────── */}
-      {view === 'selectUnit' && (
-        <>
-          <Text fontWeight="semibold">대여 가능한 전체 목록</Text>
+        {/* ── 전체 선택 화면 ──────────────────────────────────────── */}
+        {view === 'selectUnit' && (
+          <>
+            <Text fontWeight="semibold">대여 가능한 전체 목록</Text>
 
-          <SimpleGrid columns={2} gap={3}>
-            {pagedUnits.map((u) => {
-              const active = u.id === highlightId; // ✅ 기존: selectedUnitId → 수정: highlightId
-              return (
-                <VStack
-                  key={u.id}
-                  border="1px solid"
-                  borderColor={active ? 'pink.400' : 'gray.300'}
-                  rounded="md"
-                  bg="white"
-                  p={3}
-                  gap={2}
-                  cursor="pointer"
-                  onClick={() => setPendingSelectedUnitId(u.id)} // ✅ 확정 아님, 임시만
-                >
-                  <Box
-                    w="100%"
-                    h="72px"
-                    bg="gray.100"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
+            <SimpleGrid columns={2} gap={3}>
+              {pagedUnits.map((u) => {
+                const active = u.id === highlightId; // ✅ 기존: selectedUnitId → 수정: highlightId
+                return (
+                  <VStack
+                    key={u.id}
+                    border="1px solid"
+                    borderColor={active ? 'pink.400' : 'gray.300'}
+                    rounded="md"
+                    bg="white"
+                    p={3}
+                    gap={2}
+                    cursor="pointer"
+                    onClick={() => setPendingSelectedUnitId(u.id)} // ✅ 확정 아님, 임시만
                   >
-                    <Text color="gray.500">사진</Text>
-                  </Box>
-                  <Text
-                    fontSize="sm"
-                    fontWeight="semibold"
-                    color={active ? 'pink.500' : 'gray.800'}
-                  >
-                    {u.assetNo}번
-                  </Text>
-                </VStack>
-              );
-            })}
-          </SimpleGrid>
+                    <Box
+                      w="100%"
+                      h="72px"
+                      bg="gray.100"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text color="gray.500">사진</Text>
+                    </Box>
+                    <Text
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      color={active ? 'pink.500' : 'gray.800'}
+                    >
+                      {u.assetNo}번
+                    </Text>
+                  </VStack>
+                );
+              })}
+            </SimpleGrid>
 
-          {/* 페이지 이동 */}
-          <HStack justify="space-between" mt={2}>
-            <Button
-              variant="outline"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              이전
-            </Button>
-            <Button
-              variant="outline"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            >
-              다음
-            </Button>
-          </HStack>
-
-          {/* 하단 선택완료 버튼 */}
-          <Box position="sticky" bottom={0} bg="white" pt={2} pb={4}>
-            <HStack gap={2}>
-              <Button flex="1" variant="outline" onClick={cancelSelect}>
-                취소
+            {/* 페이지 이동 */}
+            <HStack justify="space-between" mt={2}>
+              <Button
+                variant="outline"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                이전
               </Button>
               <Button
-                flex="2"
-                colorScheme="blue"
-                onClick={confirmSelect}
-                disabled={!pendingSelectedUnitId} // ✅ 임시 선택 없으면 비활성
+                variant="outline"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               >
-                선택완료
+                다음
               </Button>
             </HStack>
-          </Box>
-        </>
-      )}
-    </VStack>
+
+            {/* 하단 선택완료 버튼 */}
+            <Box position="sticky" bottom={0} bg="white" pt={2} pb={4}>
+              <HStack gap={2}>
+                <Button flex="1" variant="outline" onClick={cancelSelect}>
+                  취소
+                </Button>
+                <Button
+                  flex="2"
+                  colorScheme="blue"
+                  onClick={confirmSelect}
+                  disabled={!pendingSelectedUnitId} // ✅ 임시 선택 없으면 비활성
+                >
+                  선택완료
+                </Button>
+              </HStack>
+            </Box>
+          </>
+        )}
+      </VStack>
+
+      {/* 하단 대여 버튼 */}
+      <Box position="sticky" bottom={0}>
+        <Button w="full" onClick={rent} loading={renting} disabled={!canRent}>
+          {canRent ? '대여하기' : '대여 불가'}
+        </Button>
+      </Box>
+    </Box>
   );
 }
 
