@@ -133,7 +133,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
             overflow="hidden"
             bg="white"
             boxShadow={{ base: 'none', lg: 'lg' }}
-            rounded={{ base: 'none', lg: '2xl' }}
           >
             <Container
               maxW="560px"
