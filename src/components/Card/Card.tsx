@@ -19,11 +19,13 @@ export const Card = ({ image, title, subtitle, extra, onClick, bottomExtra }: Ca
       p={2}
       align="flex-start"
       transition="all 0.2s ease-in-out"
-      _hover={{
-        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)', // 아주 은은한 그림자
-        bg: 'gray.50', // 살짝 배경색 변경
-        cursor: 'pointer',
-      }}
+      _hover={
+        onClick && {
+          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.08)', // 아주 은은한 그림자
+          bg: 'gray.50', // 살짝 배경색 변경
+          cursor: 'pointer',
+        }
+      }
       onClick={onClick}
     >
       <Box
@@ -56,11 +58,7 @@ export const Card = ({ image, title, subtitle, extra, onClick, bottomExtra }: Ca
         >
           {subtitle}
         </Text>
-        {bottomExtra && (
-          <Box mt={2} alignSelf="flex-start" w="auto">
-            {bottomExtra}
-          </Box>
-        )}
+        {bottomExtra && <Box mt={3}>{bottomExtra}</Box>}
       </Flex>
     </Flex>
   );

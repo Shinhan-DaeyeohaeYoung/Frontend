@@ -4,7 +4,7 @@ import MainPage from '@/pages/MainPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import RequestsPage from '@/pages/RequestsPage';
-import QrScanPage from '@/pages/QrScanPage';
+import QrScanPage from '@/pages/qr/QrScanPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import RankingPage from '@/pages/RankingPage';
 import AccountPage from '@/pages/AccountPage';
@@ -14,6 +14,8 @@ import AdminQrPage from '@/pages/admin/AdminQrPage';
 import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import AdminAccountPage from '@/pages/admin/AdminAccountPage';
 import RentPage from '@/pages/rent/RentPage';
+import ReturnListPage from '@/pages/return/ReturnListPage';
+import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
 
 export default function AppRoutes() {
   return (
@@ -31,6 +33,8 @@ export default function AppRoutes() {
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/ranking" element={<RankingPage />} />
       <Route path="/account" element={<AccountPage />} />
+      <Route path="/return" element={<ReturnListPage />} />
+      <Route path="/return/:itemId/photo" element={<ReturnPhotoPage />} />
 
       {/* 관리자 페이지 */}
       <Route path="/admin" element={<AdminMainPage />} />
