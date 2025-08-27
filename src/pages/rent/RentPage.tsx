@@ -1,4 +1,4 @@
-import { Box, Heading, Text, VStack, Button, HStack, Badge, Flex, Image } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack, HStack, Badge, Flex, Image } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
 import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
@@ -7,6 +7,8 @@ import { Card } from '@/components/Card';
 import { SearchInput } from '@/components/Input';
 import { useModalStore } from '@/stores/modalStore';
 import ItemDetailModalContent from './components/ItemDetailModalContent';
+import { Tag } from '@/components/Tag';
+import { Button } from '@/components/Button';
 export default function RentPage() {
   const dummyContent =
     "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
@@ -86,11 +88,11 @@ export default function RentPage() {
   };
 
   useEffect(() => {
-    // alert('검색 api 실행');
+    // alert('검색 api 실행');  [todo]: api 연동
   }, [selectedValue]);
 
   return (
-    <Box>
+    <Box px={10}>
       <PageHeader
         px={0}
         py={10}
@@ -99,7 +101,7 @@ export default function RentPage() {
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>
 
-      <Flex flexDir={'column'} justify="flex-end" mt={2}>
+      <Flex flexDir={'column'} mt={2}>
         <SearchInput
           placeholder="물품명을 입력해주세요"
           buttonText="검색"
@@ -113,7 +115,8 @@ export default function RentPage() {
 
         <SegmentButtonGroup
           ml={'auto'}
-          mr={0}
+          // mr={'auto'}
+          mt={2}
           size="sm"
           options={basicOptions}
           value={selectedValue}
@@ -129,9 +132,23 @@ export default function RentPage() {
             }
             title={el?.name}
             subtitle={dummyContent}
-            onClick={() => {
-              handleOpenItemModal(el);
-            }}
+            bottomExtra={
+              <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
+                <Text fontSize={'xs'} color={'gray.500'}>
+                  예약 가능: 00개 / 000개
+                </Text>
+                <Button
+                  ml="auto"
+                  size="sm"
+                  label={'대여하기'}
+                  onClick={() => {
+                    handleOpenItemModal(el);
+                  }}
+                >
+                  대여하기
+                </Button>
+              </Flex>
+            }
           ></Card>
         ))}
       </VStack>
