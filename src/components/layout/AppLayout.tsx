@@ -1,16 +1,6 @@
 // src/components/layout/AppLayout.tsx
 import type { PropsWithChildren } from 'react';
-import { 
-  Box, 
-  Grid, 
-  GridItem, 
-  Flex, 
-  Text, 
-  Container, 
-  Button,
-  Portal,
-  VStack
-} from '@chakra-ui/react';
+import { Box, Grid, GridItem, Flex, Text, Container, Portal } from '@chakra-ui/react';
 import { Outlet } from 'react-router-dom';
 import bgImage from '@/assets/imgs/profile_bg.png';
 import { useRef } from 'react';
@@ -47,87 +37,16 @@ function BackgroundLayer() {
 
 export default function AppLayout({ children }: PropsWithChildren) {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const { 
-    isModalOpen, 
-    modalTitle, 
-    modalCaption, 
-    modalBody, 
-    modalFooter, 
+
+  const {
+    isModalOpen,
+    modalTitle,
+    modalCaption,
+    modalBody,
+    modalFooter,
     modalFullscreen, // 풀스크린 상태 추가
-    openModal, 
-    closeModal 
+    closeModal,
   } = useModalStore();
-
-  // 일반 모달을 여는 함수
-  const handleOpenModal = () => {
-    openModal({
-      title: '일반 모달',
-      body: (
-        <Text>
-          이 모달은 오른쪽 앱 스크린 영역을 벗어나지 않습니다.
-          배경(Backdrop) 또한 해당 영역에만 적용됩니다.
-        </Text>
-      ),
-      footer: (
-        <Flex gap={2}>
-          <Button variant="outline" onClick={closeModal}>닫기</Button>
-          <Button>저장</Button>
-        </Flex>
-      )
-    });
-  };
-
-  // 풀스크린 모달을 여는 함수
-  const handleOpenFullscreenModal = () => {
-    openModal({
-      title: '물품 번호: 14',
-      caption: '대표 사진 등록하기',
-      body: (
-        <VStack gap={4} align="stretch">
-          <Box
-            border="2px dashed"
-            borderColor="gray.300"
-            rounded="lg"
-            p={8}
-            textAlign="center"
-            bg="gray.50"
-            minH="200px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <VStack>
-              <Text fontSize="4xl">📷</Text>
-              <Text>대표 사진</Text>
-              <Text fontSize="sm" color="gray.500">
-                더블 클릭하여 선택하기
-              </Text>
-            </VStack>
-          </Box>
-          
-          <Box>
-            <Text fontSize="sm" color="gray.600" mb={2}>
-              물품 설명 물품 설명 물품 설명 물품 설명 물품 설명 물품 
-              설명 물품설명물품 설명 물품 설명 물품 설명 물품 설명물 
-              품 물품 설명물품
-            </Text>
-            
-            <Text fontSize="xs" color="gray.500">
-              • 오늘 대여단위에서 08:17까지 반납되어 입니다 (2주)
-              • QR 화이포니와에서 바 아람 키 아직 화이정씨
-            </Text>
-          </Box>
-        </VStack>
-      ),
-      footer: (
-        <Button w="full" onClick={closeModal}>
-          대여하기
-        </Button>
-      ),
-      fullscreen: true // 풀스크린 모드 활성화
-    });
-  };
 
   return (
     <Box minH="100dvh" position="relative">
@@ -184,12 +103,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
               style={{ overscrollBehavior: 'contain' }}
             >
               {/* 테스트용 버튼들 */}
-              <VStack gap={4} align="stretch">
-                <Button onClick={handleOpenFullscreenModal} colorScheme="blue">
-                  풀스크린 모달 열기
-                </Button>
-              </VStack>
-
               {children || <Outlet />}
             </Container>
           </Box>
