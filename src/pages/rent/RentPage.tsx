@@ -125,32 +125,43 @@ export default function RentPage() {
       </Flex>
 
       <VStack gap={2} align="stretch" mt={2}>
-        {data.map((el) => (
-          <Card
-            image={
-              <Image src="https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg" />
-            }
-            title={el?.name}
-            subtitle={dummyContent}
-            bottomExtra={
-              <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
-                <Text fontSize={'xs'} color={'gray.500'}>
-                  예약 가능: 00개 / 000개
-                </Text>
-                <Button
-                  ml="auto"
-                  size="sm"
-                  label={'대여하기'}
-                  onClick={() => {
-                    handleOpenItemModal(el);
-                  }}
-                >
-                  대여하기
-                </Button>
-              </Flex>
-            }
-          ></Card>
-        ))}
+        {data.map((el) => {
+          const canRent = el?.availableQuantity < el?.totalQuantity;
+          const canBook = true; // [todo] 예약 로직 수정
+          return (
+            <Card
+              image={
+                <Image src="https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg" />
+              }
+              title={el?.name}
+              subtitle={dummyContent}
+              bottomExtra={
+                <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
+                  <Text fontSize={'xs'} color={'gray.500'}>
+                    {`${
+                      canRent
+                        ? `대여 가능: ${el?.availableQuantity} / ${el?.totalQuantity}개`
+                        : '예약 가능: 예약 대기열로 수정 필요'
+                    }`}
+                  </Text>
+                  <Button
+                    ml="auto"
+                    size="sm"
+                    label={'대여하기'}
+                    onClick={() => {
+                      // if (canRent) {
+                      handleOpenItemModal(el);
+                      // }
+                    }}
+                    // disabled={!canRent || !canBook}
+                  >
+                    {canRent ? '대여하기' : '예약하기'}
+                  </Button>
+                </Flex>
+              }
+            ></Card>
+          );
+        })}
       </VStack>
     </Box>
   );
