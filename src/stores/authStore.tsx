@@ -6,22 +6,26 @@ interface User {
   name: string;
   university: string;
   studentId: string;
-  isAdmin: boolean;
-  // 추가 정보
   email: string;
-  // 조직 정보 (ID + 이름)
-  universityInfo: {
-    id: number;
-    name: string;
-  } | null;
-  collegeInfo: {
-    id: number;
-    name: string;
-  } | null;
-  departmentInfo: {
-    id: number;
-    name: string;
-  } | null;
+
+  // 조직 이름 (기존 isAdmin 대신)
+  admin: 'university' | 'college' | 'department' | 'none';
+
+  // 상세 조직 정보
+  info: {
+    university: {
+      id: number;
+      name: string;
+    } | null;
+    college: {
+      id: number;
+      name: string;
+    } | null;
+    department: {
+      id: number;
+      name: string;
+    } | null;
+  };
 }
 
 interface AuthState {

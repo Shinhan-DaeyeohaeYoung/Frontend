@@ -12,8 +12,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { tokenStorage } from '../api/client';
-import { postRequest } from '../api/requests'; // 요청 유틸 함수 import
-import { toaster } from '../components/UI/toaster';
+import { postRequest, getRequest } from '../api/requests'; // 요청 유틸 함수 import
+import { toaster } from '../components/ui/toaster';
 import { useAuthStore } from '../stores/authStore';
 
 interface LoginResponse {
@@ -123,63 +123,77 @@ export default function LoginPage() {
 
       // 사용자 정보 가져오기
       try {
-        const userInfo = await postRequest<UserInfo>('/users/me', {});
+        const userInfo = await getRequest<UserInfo>('/users/me', {});
 
         if (userInfo) {
           // 조직 정보 가져오기
           try {
-            const organizations = await postRequest<Organization[]>('/organizations', {});
+            const organizations = await getRequest<Organization[]>('/organizations', {});
 
             // 조직 정보 처리
             let universityInfo = null;
             let collegeInfo = null;
             let departmentInfo = null;
-            let isAdmin = false;
+            let adminLevel: 'university' | 'college' | 'department' | 'none' = 'none';
 
             if (organizations && organizations.length > 0) {
               // 대학교 정보 찾기
-              const university = organizations.find((org) => org.type === 'UNIVERSITY');
+              const university = organizations.find(
+                (org: Organization) => org.type === 'UNIVERSITY'
+              );
               if (university) {
                 universityInfo = {
                   id: university.organizationId,
                   name: university.name,
                 };
+                // 대학교 레벨 관리자인지 확인
+                if (university.role === 'ORG_ADMIN') {
+                  adminLevel = 'university';
+                }
               }
 
               // 단과대 정보 찾기
-              const college = organizations.find((org) => org.type === 'COLLEGE');
+              const college = organizations.find((org: Organization) => org.type === 'COLLEGE');
               if (college) {
                 collegeInfo = {
                   id: college.organizationId,
                   name: college.name,
                 };
+                // 단과대 레벨 관리자인지 확인 (대학교보다 낮은 레벨)
+                if (college.role === 'ORG_ADMIN' && adminLevel === 'none') {
+                  adminLevel = 'college';
+                }
               }
 
               // 학과 정보 찾기
-              const department = organizations.find((org) => org.type === 'DEPARTMENT');
+              const department = organizations.find(
+                (org: Organization) => org.type === 'DEPARTMENT'
+              );
               if (department) {
                 departmentInfo = {
                   id: department.organizationId,
                   name: department.name,
                 };
+                // 학과 레벨 관리자인지 확인 (가장 낮은 레벨)
+                if (department.role === 'ORG_ADMIN' && adminLevel === 'none') {
+                  adminLevel = 'department';
+                }
               }
-
-              // 관리자 권한 확인
-              isAdmin = organizations.some((org) => org.role === 'ORG_ADMIN');
             }
 
-            // authStore에 사용자 정보 저장
+            // authStore에 사용자 정보 저장 (새로운 인터페이스에 맞춤)
             const userData = {
               id: userInfo.id.toString(),
               name: userInfo.name,
               university: universityInfo?.name || '서울대학교',
               studentId: userInfo.studentId,
-              isAdmin: isAdmin || userInfo.roles.includes('ROLE_ADMIN'),
+              admin: adminLevel,
               email: userInfo.email,
-              universityInfo,
-              collegeInfo,
-              departmentInfo,
-              organizations: organizations || [],
+              info: {
+                university: universityInfo,
+                college: collegeInfo,
+                department: departmentInfo,
+              },
             };
 
             useAuthStore.getState().setUser(userData);
@@ -191,12 +205,13 @@ export default function LoginPage() {
               name: userInfo.name,
               university: '서울대학교',
               studentId: userInfo.studentId,
-              isAdmin: userInfo.roles.includes('ROLE_ADMIN'),
+              admin: 'none' as const,
               email: userInfo.email,
-              universityInfo: null,
-              collegeInfo: null,
-              departmentInfo: null,
-              organizations: [],
+              info: {
+                university: null,
+                college: null,
+                department: null,
+              },
             };
 
             useAuthStore.getState().setUser(userData);
@@ -208,14 +223,15 @@ export default function LoginPage() {
         const defaultUserData = {
           id: studentId,
           name: name || '사용자',
-          university: universityId[0],
+          university: '서울대학교',
           studentId: studentId,
-          isAdmin: false,
+          admin: 'none' as const,
           email: '',
-          universityInfo: null,
-          collegeInfo: null,
-          departmentInfo: null,
-          organizations: [],
+          info: {
+            university: null,
+            college: null,
+            department: null,
+          },
         };
 
         useAuthStore.getState().setUser(defaultUserData);
