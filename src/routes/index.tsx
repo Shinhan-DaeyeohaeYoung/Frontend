@@ -7,7 +7,7 @@ import RequestsPage from '@/pages/RequestsPage';
 import QrScanPage from '@/pages/QrScanPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import RankingPage from '@/pages/RankingPage';
-import AccountPage from '@/pages/AccountPage';
+import AccountPage from '@/pages/mypage/AccountPage';
 import AdminMainPage from '@/pages/admin/AdminMainPage';
 import AdminOverviewPage from '@/pages/admin/AdminOverviewPage';
 import AdminQrPage from '@/pages/admin/AdminQrPage';
@@ -30,7 +30,7 @@ export default function AppRoutes() {
       <Route path="/qr/scan" element={<QrScanPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/ranking" element={<RankingPage />} />
-      <Route path="/account" element={<AccountPage />} />
+      <Route path="/mypage/account" element={<AccountPage />} />
 
       {/* 관리자 페이지 */}
       <Route path="/admin" element={<AdminMainPage />} />
