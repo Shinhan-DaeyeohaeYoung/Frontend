@@ -14,6 +14,9 @@ import AdminQrPage from '@/pages/admin/AdminQrPage';
 import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import AdminAccountPage from '@/pages/admin/AdminAccountPage';
 import RentPage from '@/pages/rent/RentPage';
+import ReservationQueuePage from '@/pages/mypage/ReservationQueuePage';
+import RentHistoryPage from '@/pages/mypage/RentHistoryPage';
+import UniversityPage from '@/pages/mypage/UniversityPage';
 
 export default function AppRoutes() {
   return (
@@ -31,6 +34,9 @@ export default function AppRoutes() {
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/ranking" element={<RankingPage />} />
       <Route path="/mypage/account" element={<AccountPage />} />
+      <Route path="/mypage/rent-history" element={<RentHistoryPage />} />
+      <Route path="/mypage/reservation-queue" element={<ReservationQueuePage />} />
+      <Route path="/mypage/university" element={<UniversityPage />} />
 
       {/* 관리자 페이지 */}
       <Route path="/admin" element={<AdminMainPage />} />
