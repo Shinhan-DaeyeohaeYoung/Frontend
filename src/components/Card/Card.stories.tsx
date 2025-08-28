@@ -1,6 +1,5 @@
 // src/components/Card/Card.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Button, HStack, Text } from '@chakra-ui/react';
 import { Card } from './Card';
 
