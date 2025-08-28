@@ -1,8 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from '@/pages/HomePage';
 import MainPage from '@/pages/MainPage';
-import LoginPage from '@/pages/LoginPage';
-import SignupPage from '@/pages/SignupPage';
+import LoginPage from '@/pages/user/LoginPage';
 import RequestsPage from '@/pages/RequestsPage';
 import QrScanPage from '@/pages/qr/QrScanPage';
 import NotificationsPage from '@/pages/NotificationsPage';
@@ -17,6 +16,7 @@ import RentPage from '@/pages/rent/RentPage';
 import ReturnListPage from '@/pages/return/ReturnListPage';
 import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
 import AdminItemOverviewPage from '@/pages/admin/AdminItemOverviewPage';
+import SignUpPage from '@/pages/user/SignUpPage';
 
 export default function AppRoutes() {
   return (
@@ -25,7 +25,7 @@ export default function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/main" element={<MainPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
 
       {/* 사용자 페이지 */}
       <Route path="/rent" element={<RentPage />} />
