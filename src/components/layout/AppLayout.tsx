@@ -5,8 +5,8 @@ import bgImage from '@/assets/imgs/profile_bg.png';
 import { useRef, useState } from 'react';
 import { useModalStore } from '@/stores/modalStore';
 import Modal from '@/components/Modal/Modal';
-import AppHeader from '@/components/Layout/AppHeader';
-import SideMenu from '@/components/Layout/SideMenu';
+import AppHeader from '@/components/layout/AppHeader';
+import SideMenu from '@/components/layout/SideMenu';
 
 // 헤더 프레임 타입 정의
 type HeaderFrame = 'none' | 'user' | 'user-back' | 'admin' | 'admin-back';
@@ -91,17 +91,49 @@ export default function AppLayout({ children }: PropsWithChildren) {
   // 현재 경로에 따른 헤더 프레임 결정
   const headerFrame = getHeaderFrame(pathname);
 
-  // (임시) 권한 체크: 실제 로그인 정보와 연동해서 바꿔줘
-  const isAdmin = true; // TODO: auth 상태와 연동
-
-  // 사용자 메뉴
+  // SideMenu 메뉴 항목들 정의
   const userMenuItems = [
-    { label: '대여해요', onClick: () => navigate('/rent') },
-    { label: '내 대여 현황', onClick: () => navigate('/requests') },
-    { label: '알림', onClick: () => navigate('/notifications') },
-    { label: '랭킹', onClick: () => navigate('/ranking') },
-    { label: '내 계정', onClick: () => navigate('/account') },
-    { label: 'QR 스캔', onClick: () => navigate('/qr/scan'), color: 'blue.500' },
+    {
+      label: '대여해요',
+      onClick: () => navigate('/rent'),
+    },
+    {
+      label: '내 대여 현황',
+      onClick: () => navigate('/requests'),
+    },
+    {
+      label: '알림',
+      onClick: () => navigate('/notifications'),
+    },
+    {
+      label: '랭킹',
+      onClick: () => navigate('/ranking'),
+    },
+    {
+      label: '내 계정',
+      onClick: () => navigate('/account'),
+    },
+    {
+      label: 'QR 스캔',
+      onClick: () => navigate('/qr/scan'),
+      color: 'blue.500',
+    },
+    {
+      label: '마이페이지/내 계좌내역',
+      onClick: () => navigate('/mypage/account'),
+    },
+    {
+      label: '마이페이지/대여 내역',
+      onClick: () => navigate('/mypage/rent-history'),
+    },
+    {
+      label: '마이페이지/예약 중인 물품 목록',
+      onClick: () => navigate('/mypage/reservation-queue'),
+    },
+    {
+      label: '마이페이지/대학교 리더보드',
+      onClick: () => navigate('/mypage/university'),
+    },
   ];
 
   // 관리자 메뉴 (QR 제외한 4개를 개별 항목으로 연결)
