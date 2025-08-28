@@ -120,6 +120,22 @@ export default function AppLayout({ children }: PropsWithChildren) {
       onClick: () => navigate('/qr/scan'),
       color: 'blue.500',
     },
+    {
+      label: '마이페이지/내 계좌내역',
+      onClick: () => navigate('/mypage/account'),
+    },
+    {
+      label: '마이페이지/대여 내역',
+      onClick: () => navigate('/mypage/rent-history'),
+    },
+    {
+      label: '마이페이지/예약 중인 물품 목록',
+      onClick: () => navigate('/mypage/reservation-queue'),
+    },
+    {
+      label: '마이페이지/대학교 리더보드',
+      onClick: () => navigate('/mypage/university'),
+    },
   ];
 
   // SideMenu 하단 액션들 - 관리자인 경우에만 표시할 수 있도록

@@ -1,21 +1,21 @@
-import type { ReactNode } from 'react'
-import { create } from 'zustand'
+import type { ReactNode } from 'react';
+import { create } from 'zustand';
 
 interface ModalState {
-  isModalOpen: boolean
-  modalTitle?: string
-  modalCaption?: string
-  modalBody?: ReactNode
-  modalFooter?: ReactNode
-  modalFullscreen?: boolean // 풀스크린 모드 옵션 추가
+  isModalOpen: boolean;
+  modalTitle?: string;
+  modalCaption?: string;
+  modalBody?: ReactNode;
+  modalFooter?: ReactNode;
+  modalFullscreen?: boolean;
   openModal: (params: {
-    title?: string
-    caption?: string
-    body?: ReactNode
-    footer?: ReactNode
-    fullscreen?: boolean // 풀스크린 모드 파라미터 추가
-  }) => void
-  closeModal: () => void
+    title?: string;
+    caption?: string;
+    body?: ReactNode;
+    footer?: ReactNode;
+    fullscreen?: boolean;
+  }) => void;
+  closeModal: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
@@ -45,4 +45,4 @@ export const useModalStore = create<ModalState>((set) => ({
       modalFooter: undefined,
       modalFullscreen: false,
     }),
-}))
+}));

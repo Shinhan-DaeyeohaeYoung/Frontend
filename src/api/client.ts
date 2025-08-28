@@ -4,15 +4,27 @@ import axios from 'axios';
  * src/api/client.ts
  * axios 인스턴스 생성
  */
+
+export const tokenStorage = {
+  getAccessToken: () => localStorage.getItem('accessToken'),
+  setAccessToken: (token: string) => localStorage.setItem('accessToken', token),
+  removeAccessToken: () => localStorage.removeItem('accessToken'),
+  clearTokens: () => localStorage.removeItem('accessToken'),
+};
+
+const baseURL = import.meta.env.PROD
+  ? '/api' // 배포(https vercel)에서는 프록시를 타게
+  : import.meta.env.VITE_BASE_URL ?? '/api'; // 로컬 개발은 네 env 사용
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || '/api',
+  baseURL,
   timeout: 10000,
   withCredentials: true,
 });
 
 // 요청 인터셉터 (개발 모드에서만 콘솔 로그)
 api.interceptors.request.use((config) => {
-  const token = null; // [todo] 로그인시 토큰 처리 필요
+  const token = tokenStorage.getAccessToken(); // [todo] 로그인시 토큰 처리 필요
   //   const token = useAuth.getState().tokens.accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -61,7 +73,17 @@ api.interceptors.response.use(
     if (import.meta.env.DEV) {
       console.error('[API ERROR]', response?.config?.url, response?.data || error.message);
     }
-
+    if (response?.status === 401) {
+      tokenStorage.clearTokens();
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
+
+// 로그아웃 함수
+export const logout = () => {
+  tokenStorage.clearTokens();
+  // 로그인 페이지로 리다이렉트
+  window.location.href = '/login';
+};
