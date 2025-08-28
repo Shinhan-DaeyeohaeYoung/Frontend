@@ -8,12 +8,12 @@
 import { api } from './client';
 import type { AxiosRequestConfig } from 'axios';
 
-export const getRequest = async <T = any>(url: string, config?: AxiosRequestConfig) => {
+export const getRequest = async <T = unknown>(url: string, config?: AxiosRequestConfig) => {
   const response = await api.get<T>(url, config);
   return response.data;
 };
 
-export const postRequest = async <T = any, D = any>(
+export const postRequest = async <T = unknown, D = unknown>(
   url: string,
   data?: D,
   config?: AxiosRequestConfig
@@ -22,7 +22,7 @@ export const postRequest = async <T = any, D = any>(
   return response.data;
 };
 
-export const patchRequest = async <T = any, D = any>(
+export const patchRequest = async <T = unknown, D = unknown>(
   url: string,
   data?: D,
   config?: AxiosRequestConfig
@@ -31,7 +31,7 @@ export const patchRequest = async <T = any, D = any>(
   return response.data;
 };
 
-export const deleteRequest = async <T = any>(url: string, config?: AxiosRequestConfig) => {
+export const deleteRequest = async <T = unknown>(url: string, config?: AxiosRequestConfig) => {
   const response = await api.delete<T>(url, config);
   return response.data;
 };
