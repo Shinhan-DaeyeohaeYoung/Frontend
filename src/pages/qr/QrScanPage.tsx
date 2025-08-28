@@ -1,137 +1,74 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Button, Flex, Heading, HStack, Select, Stack, Text } from '@chakra-ui/react';
-import { RiCameraLine, RiRefreshLine, RiCloseCircleLine } from 'react-icons/ri';
-import { useNavigate } from 'react-router-dom';
-import { toaster } from '@/components/ui/toaster';
-import { extractTokenFromQR, fetchOrgQrMeta, resolveQrToken } from '@/api/qrs';
-
-declare global {
-  interface Window {
-    BarcodeDetector?: any;
-  }
-}
-const SUPPORTS = typeof window !== 'undefined' && !!window.BarcodeDetector;
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, Button, Flex, Heading, HStack, Stack, Text } from '@chakra-ui/react';
+import jsQR from 'jsqr';
 
 const QrScanPage: React.FC = () => {
-  const nav = useNavigate();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const detectorRef = useRef<any | null>(null);
-
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>();
   const [error, setError] = useState<string | null>(null);
-  const [resultText, setResultText] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
 
-  const stop = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | undefined>(undefined);
+
+  const startCamera = async () => {
+    setError(null);
+    setResult(null);
+    setIsScanning(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        scanFrame();
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '카메라를 시작할 수 없어요.');
+      setIsScanning(false);
     }
-  }, []);
+  };
 
-  const handleResolved = useCallback(
-    async (token: string) => {
-      toaster.create({ description: 'QR 확인 중...', type: 'loading' });
-      try {
-        const data = await resolveQrToken(token);
-        toaster.dismiss();
-        toaster.success({
-          title: '인식 성공',
-          description: `organizationId=${data.organizationId}`,
-        });
-        nav(`/rent?orgId=${data.organizationId}`);
-      } catch (e: any) {
-        toaster.dismiss();
-        toaster.error({ title: '검증 실패', description: e?.message ?? '유효하지 않은 QR' });
-      }
-    },
-    [nav]
-  );
+  const stopCamera = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setIsScanning(false);
+  };
 
-  const loopDetect = useCallback(() => {
-    const tick = async () => {
-      try {
-        const v = videoRef.current;
-        const det = detectorRef.current;
-        if (v && det && !v.paused && !v.ended) {
-          const codes = await det.detect(v);
-          if (codes?.length) {
-            const raw = String(codes[0].rawValue ?? '');
-            setResultText(raw);
-            const token = extractTokenFromQR(raw);
-            if (!token) {
-              toaster.error({
-                title: '토큰 형식 오류',
-                description: 'QR 내용에서 token을 찾지 못했습니다.',
-              });
-            } else {
-              if (navigator.vibrate) navigator.vibrate(120);
-              await handleResolved(token);
-            }
-          }
-        }
-      } catch {
-        // ignore
-      } finally {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    };
-    rafRef.current = requestAnimationFrame(tick);
-  }, [handleResolved]);
+  const scanFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      rafRef.current = requestAnimationFrame(scanFrame);
+      return;
+    }
 
-  const start = useCallback(
-    async (deviceId?: string) => {
-      try {
-        setError(null);
-        setResultText(null);
-        stop();
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, canvas.width, canvas.height);
 
-        if (!SUPPORTS) {
-          setError('이 브라우저는 BarcodeDetector를 지원하지 않습니다.');
-          toaster.warning({ description: 'BarcodeDetector 미지원 브라우저' });
-          return;
-        }
+    if (code?.data) {
+      setResult(code.data);
+      stopCamera();
 
-        const constraints: MediaStreamConstraints = {
-          video: deviceId
-            ? { deviceId: { exact: deviceId } }
-            : { facingMode: { ideal: 'environment' } },
-          audio: false,
-        };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        streamRef.current = stream;
+      // 원하면 여기서 자동 이동:
+      // if (code.data.startsWith('http')) window.location.href = code.data
+      return;
+    }
+    rafRef.current = requestAnimationFrame(scanFrame);
+  };
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-
-        const all = await navigator.mediaDevices.enumerateDevices();
-        const cams = all.filter((d) => d.kind === 'videoinput');
-        setDevices(cams);
-        if (!deviceId && cams.length && !selectedDeviceId) setSelectedDeviceId(cams[0].deviceId);
-
-        detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
-        loopDetect();
-      } catch (e: any) {
-        const name = e?.name || '';
-        if (name === 'NotAllowedError' || name === 'SecurityError') {
-          setError('카메라 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.');
-          toaster.error({ title: '권한 필요', description: '카메라 접근을 허용해 주세요.' });
-        } else {
-          setError('카메라 시작 오류');
-          toaster.error({ title: '오류', description: '카메라를 시작할 수 없습니다.' });
-        }
-      }
-    },
-    [loopDetect, selectedDeviceId, stop]
-  );
-
-  useEffect(() => () => stop(), [stop]);
+  useEffect(() => () => stopCamera(), []);
 
   return (
     <Flex justify="center" p={4}>
@@ -162,77 +99,64 @@ const QrScanPage: React.FC = () => {
             playsInline
             muted
           />
+
+          {/* 스캔 영역 가이드 */}
           <Box
-            pointerEvents="none"
             position="absolute"
-            inset={0}
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%)"
+            w="200px"
+            h="200px"
             border="2px dashed"
-            borderColor="blackAlpha.400"
+            borderColor="red.400"
             rounded="md"
+            pointerEvents="none"
           />
+
+          {/* 스캐닝 상태 표시 */}
+          {isScanning && (
+            <Box
+              position="absolute"
+              top="10px"
+              left="10px"
+              bg="green.500"
+              color="white"
+              px={2}
+              py={1}
+              rounded="md"
+              fontSize="xs"
+            >
+              jsQR 스캐닝 중...
+            </Box>
+          )}
         </Box>
 
         <Stack gap={3} mb={4}>
           <HStack justify="space-between">
-            <Button size="sm" onClick={() => start(selectedDeviceId)}>
-              카메라 시작
+            <Button
+              size="sm"
+              onClick={startCamera}
+              isDisabled={isScanning}
+              colorScheme={isScanning ? 'gray' : 'blue'}
+            >
+              {isScanning ? '스캐닝 중' : '카메라 시작'}
             </Button>
-            <Button size="sm" variant="outline" onClick={stop}>
+            <Button size="sm" variant="outline" onClick={stopCamera} isDisabled={!isScanning}>
               중지
             </Button>
             <Button
               size="sm"
               variant="outline"
               onClick={() => {
-                setResultText(null);
-                toaster.create({ description: '스캐너 리셋', type: 'info' });
+                setResult(null);
+                setError(null);
+                console.log('스캐너 리셋');
               }}
             >
               초기화
             </Button>
           </HStack>
-
-          <HStack>
-            <Text fontSize="sm" minW="80px">
-              카메라
-            </Text>
-            {/* <Select
-              size="sm"
-              value={selectedDeviceId}
-              onChange={(e) => {
-                const id = e.target.value;
-                setSelectedDeviceId(id);
-                start(id);
-              }}
-              isDisabled={!devices.length}
-              placeholder={devices.length ? '선택' : '권한 허용 후 사용'}
-            >
-              {devices.map((d) => (
-                <option key={d.deviceId} value={d.deviceId}>
-                  {d.label || `Camera ${d.deviceId.slice(0, 4)}`}
-                </option>
-              ))}
-            </Select> */}
-          </HStack>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              try {
-                toaster.create({ description: '테스트 토큰 발급 중...', type: 'loading' });
-                const meta = await fetchOrgQrMeta();
-                toaster.create({ description: 'QR 해석 중...', type: 'info' });
-                await handleResolved(meta.token);
-              } catch (e: any) {
-                toaster.dismiss();
-                toaster.error({ title: '테스트 실패', description: e?.message ?? '요청 실패' });
-                alert('error');
-              }
-            }}
-          >
-            테스트 토큰으로 이동
-          </Button>
         </Stack>
 
         {error ? (
@@ -243,17 +167,20 @@ const QrScanPage: React.FC = () => {
           <>
             <Text fontSize="sm" color="gray.600">
               태블릿의 QR을 인식해주세요! <br />
-              *권한 설정 – 카메라 허용 해주세요
+              *권한 설정 – 카메라 허용 해주세요 <br />
+              *jsQR 라이브러리 사용 중
             </Text>
-            {resultText && (
+            {result && (
               <Box mt={3} p={2} border="1px solid" borderColor="gray.200" rounded="md" bg="gray.50">
                 <Text fontSize="xs" wordBreak="break-all">
-                  스캔 텍스트: {resultText}
+                  스캔 텍스트: {result}
                 </Text>
               </Box>
             )}
           </>
         )}
+
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
       </Box>
     </Flex>
   );
