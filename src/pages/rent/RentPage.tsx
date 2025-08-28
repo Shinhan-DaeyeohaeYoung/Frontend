@@ -157,29 +157,6 @@ export default function RentPage() {
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>
 
-      <Flex flexDir={'column'} mt={2}>
-        <SearchInput
-          placeholder="물품명을 입력해주세요"
-          buttonText="검색"
-          value={query}
-          onChange={setQuery}
-          onSearch={handleSearch}
-          size="md"
-          variant="outline"
-          name="itemSearch"
-        />
-
-        <SegmentButtonGroup
-          ml={'auto'}
-          // mr={'auto'}
-          mt={2}
-          size="sm"
-          options={basicOptions}
-          value={selectedValue}
-          onChange={setSelectedValue}
-        />
-      </Flex>
-
       <VStack gap={2} align="stretch" mt={2}>
         {data.map((el) => {
           const canRent = el?.availableQuantity < el?.totalQuantity;
