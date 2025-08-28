@@ -140,15 +140,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
   ];
 
   // 관리자 메뉴 (QR 제외한 4개를 개별 항목으로 연결)
-  const adminMenuItems = user?.isAdmin
-    ? [
-        { label: '관리자 홈', onClick: () => navigate('/admin'), color: 'purple.500' },
-        { label: '관리자 개요', onClick: () => navigate('/admin/overview'), color: 'purple.500' },
-        { label: '관리자 보고', onClick: () => navigate('/admin/reports'), color: 'purple.500' },
-        { label: '관리자 계좌', onClick: () => navigate('/admin/account'), color: 'purple.500' },
-        // ✅ 요청대로 /admin/qr 항목은 포함하지 않음
-      ]
-    : [];
+  const adminMenuItems =
+    user?.admin !== 'none'
+      ? [
+          { label: '관리자 홈', onClick: () => navigate('/admin'), color: 'purple.500' },
+          { label: '관리자 개요', onClick: () => navigate('/admin/overview'), color: 'purple.500' },
+          { label: '관리자 보고', onClick: () => navigate('/admin/reports'), color: 'purple.500' },
+          { label: '관리자 계좌', onClick: () => navigate('/admin/account'), color: 'purple.500' },
+          // ✅ 요청대로 /admin/qr 항목은 포함하지 않음
+        ]
+      : [];
 
   // 최종 메뉴 (사용자 + 관리자(옵션))
   const menuItems = [...userMenuItems, ...adminMenuItems];

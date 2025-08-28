@@ -172,14 +172,13 @@ export default function LoginPage() {
             const userData = {
               id: userInfo.id.toString(),
               name: userInfo.name,
-              university: universityInfo?.name || '서울대학교',
+              university: universityId[0],
               studentId: userInfo.studentId,
               isAdmin: isAdmin || userInfo.roles.includes('ROLE_ADMIN'),
               email: userInfo.email,
               universityInfo,
               collegeInfo,
               departmentInfo,
-              organizations: organizations || [],
             };
 
             useAuthStore.getState().setUser(userData);
@@ -189,14 +188,13 @@ export default function LoginPage() {
             const userData = {
               id: userInfo.id.toString(),
               name: userInfo.name,
-              university: '서울대학교',
+              university: universityId[0],
               studentId: userInfo.studentId,
               isAdmin: userInfo.roles.includes('ROLE_ADMIN'),
               email: userInfo.email,
               universityInfo: null,
               collegeInfo: null,
               departmentInfo: null,
-              organizations: [],
             };
 
             useAuthStore.getState().setUser(userData);
@@ -215,7 +213,6 @@ export default function LoginPage() {
           universityInfo: null,
           collegeInfo: null,
           departmentInfo: null,
-          organizations: [],
         };
 
         useAuthStore.getState().setUser(defaultUserData);
