@@ -17,6 +17,8 @@ import RentPage from '@/pages/rent/RentPage';
 import ReservationQueuePage from '@/pages/mypage/ReservationQueuePage';
 import RentHistoryPage from '@/pages/mypage/RentHistoryPage';
 import UniversityPage from '@/pages/mypage/UniversityPage';
+import QrRentPage from '@/pages/qr/QrRentPage';
+import QrReturnPage from '@/pages/qr/QrReturnPage';
 
 export default function AppRoutes() {
   return (
@@ -31,6 +33,8 @@ export default function AppRoutes() {
       <Route path="/rent" element={<RentPage />} />
       <Route path="/requests" element={<RequestsPage />} />
       <Route path="/qr/scan" element={<QrScanPage />} />
+      <Route path="/qr/rent" element={<QrRentPage />} />
+      <Route path="/qr/return" element={<QrReturnPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/ranking" element={<RankingPage />} />
       <Route path="/mypage/account" element={<AccountPage />} />
