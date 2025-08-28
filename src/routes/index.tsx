@@ -7,7 +7,7 @@ import RequestsPage from '@/pages/RequestsPage';
 import QrScanPage from '@/pages/qr/QrScanPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import RankingPage from '@/pages/RankingPage';
-import AccountPage from '@/pages/AccountPage';
+import AccountPage from '@/pages/mypage/AccountPage';
 import AdminMainPage from '@/pages/admin/AdminMainPage';
 import AdminOverviewPage from '@/pages/admin/AdminOverviewPage';
 import AdminQrPage from '@/pages/admin/AdminQrPage';
@@ -17,6 +17,9 @@ import RentPage from '@/pages/rent/RentPage';
 import ReturnListPage from '@/pages/return/ReturnListPage';
 import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
 import AdminItemOverviewPage from '@/pages/admin/AdminItemOverviewPage';
+import ReservationQueuePage from '@/pages/mypage/ReservationQueuePage';
+import RentHistoryPage from '@/pages/mypage/RentHistoryPage';
+import UniversityPage from '@/pages/mypage/UniversityPage';
 
 export default function AppRoutes() {
   return (
@@ -36,6 +39,10 @@ export default function AppRoutes() {
       <Route path="/account" element={<AccountPage />} />
       <Route path="/return" element={<ReturnListPage />} />
       <Route path="/return/:itemId/photo" element={<ReturnPhotoPage />} />
+      <Route path="/mypage/account" element={<AccountPage />} />
+      <Route path="/mypage/rent-history" element={<RentHistoryPage />} />
+      <Route path="/mypage/reservation-queue" element={<ReservationQueuePage />} />
+      <Route path="/mypage/university" element={<UniversityPage />} />
 
       {/* 관리자 페이지 */}
       <Route path="/admin" element={<AdminMainPage />} />
