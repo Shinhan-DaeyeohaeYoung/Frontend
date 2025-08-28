@@ -70,4 +70,13 @@ export default defineConfig({
       },
     ],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://43.200.61.108:8082',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
