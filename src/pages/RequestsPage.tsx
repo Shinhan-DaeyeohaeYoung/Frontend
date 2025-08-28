@@ -14,27 +14,27 @@ import {
   Alert,
   Separator,
   // Dialog, CloseButton, useDisclosure  // ❌ 제거
-} from '@chakra-ui/react'
-import { Link } from 'react-router-dom'
-import { useCallback, useState, useEffect } from 'react'
-import { useModalStore } from '@/stores/modalStore'   // ✅ 전역 모달 스토어
+} from '@chakra-ui/react';
+import { Link } from 'react-router-dom';
+import { useCallback, useState, useEffect } from 'react';
+import { useModalStore } from '@/stores/modalStore'; // ✅ 전역 모달 스토어
 
 // 타입 정의
 interface RequestData {
-  id: string
-  title: string
-  start: string
-  end: string
-  reason: string
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: string
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
 }
 
 interface FormData {
-  title: string
-  start: string
-  end: string
-  reason: string
+  title: string;
+  start: string;
+  end: string;
+  reason: string;
 }
 
 // 상태별 배지 색상과 텍스트
@@ -42,60 +42,54 @@ const statusConfig = {
   pending: { color: 'yellow', text: '검토중' },
   approved: { color: 'green', text: '승인됨' },
   rejected: { color: 'red', text: '반려됨' },
-}
+};
 
 /** 모달 바디로 들어갈 폼 (로컬 컴포넌트) */
-function NewRequestForm({
-  id,
-  onSubmit,
-}: {
-  id: string
-  onSubmit: (data: FormData) => void
-}) {
-  const [errors, setErrors] = useState<Partial<FormData>>({})
+function NewRequestForm({ id, onSubmit }: { id: string; onSubmit: (data: FormData) => void }) {
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [formData, setFormData] = useState<FormData>({
     title: '',
     start: '',
     end: '',
     reason: '',
-  })
+  });
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {}
+    const newErrors: Partial<FormData> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = '제목을 입력해주세요'
+      newErrors.title = '제목을 입력해주세요';
     }
     if (!formData.start) {
-      newErrors.start = '시작일을 선택해주세요'
+      newErrors.start = '시작일을 선택해주세요';
     }
     if (!formData.end) {
-      newErrors.end = '종료일을 선택해주세요'
+      newErrors.end = '종료일을 선택해주세요';
     }
     if (formData.start && formData.end && formData.start > formData.end) {
-      newErrors.end = '종료일은 시작일보다 늦어야 합니다'
+      newErrors.end = '종료일은 시작일보다 늦어야 합니다';
     }
     if (!formData.reason.trim()) {
-      newErrors.reason = '사유를 입력해주세요'
+      newErrors.reason = '사유를 입력해주세요';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData)
+      onSubmit(formData);
     }
-  }
+  };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }))
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  }
+  };
 
   return (
     <form id={id} onSubmit={handleSubmit}>
@@ -149,17 +143,16 @@ function NewRequestForm({
         </Field.Root>
       </VStack>
     </form>
-  )
+  );
 }
 
 export default function RequestsPage() {
-  // const { open, onOpen, onClose } = useDisclosure()   // ❌ 제거
-  const { openModal, openFullscreen, close } = useModalStore() // ✅ 전역 모달 훅
-  const formId = 'new-request-form'
+  const { openModal, closeModal } = useModalStore(); // ✅ 올바른 메서드명 사용
+  const formId = 'new-request-form';
 
-  const [requests, setRequests] = useState<RequestData[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [requests, setRequests] = useState<RequestData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 초기 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
@@ -191,15 +184,15 @@ export default function RequestsPage() {
         status: 'rejected',
         createdAt: '2024-01-14',
       },
-    ]
+    ];
 
     setTimeout(() => {
-      setRequests(mockData)
-      setIsLoading(false)
-    }, 500)
-  }, [])
+      setRequests(mockData);
+      setIsLoading(false);
+    }, 500);
+  }, []);
 
-  /** ✅ “새 글 작성” 클릭 시 전역 모달로 폼 띄우기 */
+  /** ✅ "새 글 작성" 클릭 시 전역 모달로 폼 띄우기 */
   const handleNewClick = useCallback(() => {
     openModal({
       title: '신청 글 작성',
@@ -207,7 +200,7 @@ export default function RequestsPage() {
       body: <NewRequestForm id={formId} onSubmit={handleSubmit} />,
       footer: (
         <HStack gap={2} w="full" justify="center">
-          <Button variant="outline" onClick={close} disabled={isSubmitting}>
+          <Button variant="outline" onClick={closeModal} disabled={isSubmitting}>
             취소
           </Button>
           <Button
@@ -221,12 +214,12 @@ export default function RequestsPage() {
           </Button>
         </HStack>
       ),
-    })
-  }, [close, isSubmitting]) // handleSubmit은 아래에서 정의되므로 여기선 제외
+    });
+  }, [closeModal, isSubmitting]);
 
   /** 폼 제출 */
   const handleSubmit = async (data: FormData) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       // TODO: API 호출
       const newRequest: RequestData = {
@@ -234,29 +227,29 @@ export default function RequestsPage() {
         ...data,
         status: 'pending',
         createdAt: new Date().toISOString().split('T')[0],
-      }
+      };
 
-      setRequests((prev) => [newRequest, ...prev])
-      close() // ✅ 전역 모달 닫기
+      setRequests((prev) => [newRequest, ...prev]);
+      closeModal(); // ✅ 올바른 메서드명 사용
 
-      console.log('신청이 완료되었습니다', data)
-      alert('신청이 완료되었습니다!')
+      console.log('신청이 완료되었습니다', data);
+      alert('신청이 완료되었습니다!');
     } catch (error) {
-      console.error('오류가 발생했습니다', error)
-      alert('오류가 발생했습니다. 다시 시도해주세요.')
+      console.error('오류가 발생했습니다', error);
+      alert('오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    })
-  }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -266,7 +259,7 @@ export default function RequestsPage() {
           <Text color="gray.500">요청 목록을 불러오는 중...</Text>
         </VStack>
       </Box>
-    )
+    );
   }
 
   return (
@@ -308,35 +301,35 @@ export default function RequestsPage() {
                 }}
                 transition="all 0.2s"
                 onClick={() =>
-                  openFullscreen({
-                    title: request.title,
-                    caption: `신청일: ${formatDate(request.createdAt)}\n기간: ${formatDate(
-                      request.start,
-                    )} ~ ${formatDate(request.end)}`,
-                    body: (
-                      <VStack align="stretch" gap={3}>
-                        <HStack justify="space-between">
-                          <Badge colorScheme={statusConfig[request.status].color}>
-                            {statusConfig[request.status].text}
-                          </Badge>
-                          <Text fontSize="sm" color="gray.500">
-                            #{request.id}
-                          </Text>
-                        </HStack>
-                        <Text whiteSpace="pre-wrap" color="gray.700">
-                          {request.reason}
-                        </Text>
-                      </VStack>
-                    ),
-                    footer: (
-                      <HStack gap={2}>
-                        <Button variant="ghost" onClick={close}>
-                          닫기
-                        </Button>
-                        {/* 여기에 승인/반려 같은 액션 버튼도 추가 가능 */}
-                      </HStack>
-                    ),
-                  })
+                  // openFullscreen({ // This line was removed as per the edit hint
+                  //   title: request.title,
+                  //   caption: `신청일: ${formatDate(request.createdAt)}\n기간: ${formatDate(
+                  //     request.start,
+                  //   )} ~ ${formatDate(request.end)}`,
+                  //   body: (
+                  //     <VStack align="stretch" gap={3}>
+                  //       <HStack justify="space-between">
+                  //         <Badge colorScheme={statusConfig[request.status].color}>
+                  //           {statusConfig[request.status].text}
+                  //         </Badge>
+                  //         <Text fontSize="sm" color="gray.500">
+                  //           #{request.id}
+                  //         </Text>
+                  //       </HStack>
+                  //       <Text whiteSpace="pre-wrap" color="gray.700">
+                  //         {request.reason}
+                  //       </Text>
+                  //     </VStack>
+                  //   ),
+                  //   footer: (
+                  //     <HStack gap={2}>
+                  //       <Button variant="ghost" onClick={close}>
+                  //         닫기
+                  //       </Button>
+                  //       {/* 여기에 승인/반려 같은 액션 버튼도 추가 가능 */}
+                  //     </HStack>
+                  //   ),
+                  console.log('Request clicked:', request.id)
                 }
               >
                 <HStack justify="space-between" mb={3}>
@@ -385,5 +378,5 @@ export default function RequestsPage() {
 
       {/* ✅ 페이지 내부 Dialog 전부 제거됨. 전역 Modal이 AppLayout에서 렌더링됨 */}
     </Box>
-  )
+  );
 }
