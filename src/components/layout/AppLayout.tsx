@@ -4,6 +4,7 @@ import { Outlet, useLocation, matchPath, useNavigate } from 'react-router-dom';
 import bgImage from '@/assets/imgs/profile_bg.png';
 import { useRef, useState } from 'react';
 import { useModalStore } from '@/stores/modalStore';
+import { useAuthStore } from '@/stores/authStore';
 import Modal from '@/components/Modal/Modal';
 import AppHeader from '@/components/layout/AppHeader';
 import SideMenu from '@/components/layout/SideMenu';
@@ -85,11 +86,17 @@ export default function AppLayout({ children }: PropsWithChildren) {
     closeModal,
   } = useModalStore();
 
+  // 인증 상태 가져오기
+  const { user, isAuthenticated } = useAuthStore();
+
   // 사이드메뉴 상태
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
   // 현재 경로에 따른 헤더 프레임 결정
   const headerFrame = getHeaderFrame(pathname);
+
+  // 관리자 여부 확인 (admin이 'none'이 아닌 경우)
+  const isAdmin = user?.admin && user.admin !== 'none';
 
   // SideMenu 메뉴 항목들 정의
   const userMenuItems = [

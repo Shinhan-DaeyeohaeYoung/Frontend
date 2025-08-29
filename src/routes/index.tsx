@@ -13,13 +13,15 @@ import AdminOverviewPage from '@/pages/admin/AdminOverviewPage';
 import AdminQrPage from '@/pages/admin/AdminQrPage';
 import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import AdminAccountPage from '@/pages/admin/AdminAccountPage';
+import AdminItemCreatePage from '@/pages/admin/AdminItemCreatePage';
 import RentPage from '@/pages/rent/RentPage';
 import ReturnListPage from '@/pages/return/ReturnListPage';
 import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
-import AdminItemOverviewPage from '@/pages/admin/AdminItemOverviewPage';
+import AdminItemOverviewPage from '@/pages/admin/AdminUnitOverviewPage';
 import ReservationQueuePage from '@/pages/mypage/ReservationQueuePage';
 import RentHistoryPage from '@/pages/mypage/RentHistoryPage';
 import UniversityPage from '@/pages/mypage/UniversityPage';
+import AdminUnitCreatePage from '@/pages/admin/AdminUnitCreatePage';
 
 export default function AppRoutes() {
   return (
@@ -48,9 +50,11 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminMainPage />} />
       <Route path="/admin/overview" element={<AdminOverviewPage />} />
       <Route path="/admin/overview/:itemId" element={<AdminItemOverviewPage />} />
+      <Route path="/admin/items/create" element={<AdminItemCreatePage />} />
       <Route path="/admin/qr" element={<AdminQrPage />} />
       <Route path="/admin/reports" element={<AdminReportsPage />} />
       <Route path="/admin/account" element={<AdminAccountPage />} />
+      <Route path="/admin/units/create" element={<AdminUnitCreatePage />} />
     </Routes>
   );
 }
