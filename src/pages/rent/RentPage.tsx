@@ -141,9 +141,7 @@ export default function RentPage() {
                       }
                     }}
                     disabled={!canRent && !canBook} // 둘 다 불가능하면 버튼 비활성화
-                  >
-                    {canRent ? '대여하기' : '예약하기'}
-                  </Button>
+                  ></Button>
                 </Flex>
               }
             ></Card>
