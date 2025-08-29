@@ -12,8 +12,12 @@ export const tokenStorage = {
   clearTokens: () => localStorage.removeItem('accessToken'),
 };
 
+const baseURL = import.meta.env.PROD
+  ? '/api' // 배포(https vercel)에서는 프록시를 타게
+  : import.meta.env.VITE_BASE_URL ?? '/api'; // 로컬 개발은 네 env 사용
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || '/api',
+  baseURL,
   timeout: 10000,
   withCredentials: true,
 });

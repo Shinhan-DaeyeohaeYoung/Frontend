@@ -9,8 +9,6 @@ export interface AppTagProps {
 }
 
 export const Tag: React.FC<AppTagProps> = ({ label, variant = 'default' }) => {
-  const isError = variant === 'error';
-
   const styles =
     variant === 'error'
       ? { color: 'red.600', borderColor: 'red.600', bg: 'white', colorPalette: 'red' }
