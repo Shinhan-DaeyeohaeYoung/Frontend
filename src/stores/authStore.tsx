@@ -5,6 +5,7 @@ interface User {
   id: string;
   name: string;
   university: string;
+  universityId: number;
   studentId: string;
   email: string;
 
@@ -12,7 +13,7 @@ interface User {
   admin: 'university' | 'college' | 'department' | 'none';
 
   // 상세 조직 정보
-  info: {
+  organizationInfo: {
     university: {
       id: number;
       name: string;
@@ -35,9 +36,12 @@ interface AuthState {
   isAuthenticated: boolean;
   // 로딩 상태
   isLoading: boolean;
+  // 대학 ID (별도로 저장)
+  universityId: number | null;
 
   // 액션들
   setUser: (user: User) => void;
+  setUniversityId: (id: number) => void; // 추가된 액션
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
@@ -50,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      universityId: null, // 추가된 상태
 
       // 사용자 정보 설정
       setUser: (user: User) =>
@@ -57,7 +62,11 @@ export const useAuthStore = create<AuthState>()(
           user,
           isAuthenticated: true,
           isLoading: false,
+          universityId: user.universityId, // 사용자 설정 시 universityId도 함께 설정
         }),
+
+      // 대학 ID 설정 (별도 액션)
+      setUniversityId: (id: number) => set({ universityId: id }),
 
       // 사용자 정보 초기화
       clearUser: () =>
@@ -65,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           isAuthenticated: false,
           isLoading: false,
+          universityId: null, // universityId도 초기화
         }),
 
       // 로딩 상태 설정
@@ -78,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           isAuthenticated: false,
           isLoading: false,
+          universityId: null, // universityId도 초기화
         });
       },
     }),
@@ -86,7 +97,8 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-      }), // user와 isAuthenticated만 저장
+        universityId: state.universityId, // universityId도 저장
+      }), // user, isAuthenticated, universityId 저장
     }
   )
 );

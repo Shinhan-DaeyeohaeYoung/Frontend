@@ -1,12 +1,12 @@
 import type { PropsWithChildren } from 'react';
 import { Box, Grid, GridItem, Text, Container, Portal } from '@chakra-ui/react';
-import { Outlet, useLocation, matchPath } from 'react-router-dom';
+import { Outlet, useLocation, matchPath, useNavigate } from 'react-router-dom';
 import bgImage from '@/assets/imgs/profile_bg.png';
 import { useRef, useState } from 'react';
 import { useModalStore } from '@/stores/modalStore';
+import { useAuthStore } from '@/stores/authStore';
 import Modal from '@/components/Modal/Modal';
 import AppHeader from '@/components/layout/AppHeader';
-import { useNavigate } from 'react-router-dom';
 import SideMenu from '@/components/layout/SideMenu';
 
 // 헤더 프레임 타입 정의
@@ -74,8 +74,8 @@ function BackgroundLayer() {
 
 export default function AppLayout({ children }: PropsWithChildren) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const {
     isModalOpen,
@@ -87,14 +87,17 @@ export default function AppLayout({ children }: PropsWithChildren) {
     closeModal,
   } = useModalStore();
 
-  // SideMenu 상태 관리
+  // 인증 상태 가져오기
+  const { user } = useAuthStore();
+
+  // 사이드메뉴 상태
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
   // 현재 경로에 따른 헤더 프레임 결정
   const headerFrame = getHeaderFrame(pathname);
 
   // SideMenu 메뉴 항목들 정의
-  const menuItems = [
+  const userMenuItems = [
     {
       label: '대여해요',
       onClick: () => navigate('/rent'),
@@ -138,29 +141,30 @@ export default function AppLayout({ children }: PropsWithChildren) {
     },
   ];
 
-  // SideMenu 하단 액션들 - 관리자인 경우에만 표시할 수 있도록
-  const bottomActions = [
-    {
-      label: '관리자 모드',
-      onClick: () => navigate('/admin'),
-      color: 'purple.500',
-      condition: pathname.includes('/admin') || true, // 조건에 맞게 수정하세요
-    },
-  ];
+  // 관리자 메뉴 (QR 제외한 4개를 개별 항목으로 연결)
+  const adminMenuItems =
+    user?.admin !== 'none'
+      ? [
+          { label: '관리자 홈', onClick: () => navigate('/admin'), color: 'purple.500' },
+          { label: '관리자 개요', onClick: () => navigate('/admin/overview'), color: 'purple.500' },
+          { label: '관리자 보고', onClick: () => navigate('/admin/reports'), color: 'purple.500' },
+          { label: '관리자 계좌', onClick: () => navigate('/admin/account'), color: 'purple.500' },
+          // ✅ 요청대로 /admin/qr 항목은 포함하지 않음
+        ]
+      : [];
 
-  // 메뉴 버튼 클릭 핸들러
-  const handleMenuClick = () => {
-    setIsSideMenuOpen(true);
-  };
-  // 로고 클릭 핸들러
-  const handleLogoClick = () => {
-    navigate('/');
-  };
+  // 최종 메뉴 (사용자 + 관리자(옵션))
+  const menuItems = [...userMenuItems, ...adminMenuItems];
 
-  // 로그아웃 핸들러
+  // ❌ 하단 액션 제거 (관리자 모드 버튼 삭제)
+  const bottomActions: Array<never> = [];
+
+  const handleMenuClick = () => setIsSideMenuOpen(true);
+  const handleLogoClick = () => navigate('/');
   const handleLogout = () => {
-    // 실제 로그아웃 로직 구현
     console.log('로그아웃');
+    // authStore에서 로그아웃 처리
+    useAuthStore.getState().logout();
     navigate('/login');
   };
 
@@ -218,18 +222,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
               style={{ overscrollBehavior: 'contain' }}
               p={0}
             >
-              {/* 헤더 조건부 렌더링 */}
+              {/* 헤더 */}
               {headerFrame !== 'none' && (
-                <AppHeader
-                  frame={headerFrame}
-                  // 필요한 경우 콜백 함수들을 props로 전달
-                  onMenuClick={() => handleMenuClick()}
-                  onBackClick={() => console.log('뒤로가기 클릭')}
-                  onQRClick={() => console.log('QR 스캔 클릭')}
-                  onHomeClick={() => console.log('홈 클릭')}
-                />
+                <AppHeader frame={headerFrame} onMenuClick={handleMenuClick} />
               )}
-              {/* SideMenu 컴포넌트 */}
+
+              {/* 사이드메뉴 */}
               <SideMenu
                 containerRef={containerRef}
                 isOpen={isSideMenuOpen}
@@ -237,8 +235,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 onLogoClick={handleLogoClick}
                 onLogout={handleLogout}
                 menuItems={menuItems}
-                bottomActions={bottomActions}
-                // logoSrc="/path/to/logo.png" // 로고가 있다면 추가
+                bottomActions={bottomActions} // 빈 배열 전달
               />
 
               {/* 메인 콘텐츠 */}

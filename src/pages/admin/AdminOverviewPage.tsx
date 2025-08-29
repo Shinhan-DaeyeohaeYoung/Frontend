@@ -1,151 +1,166 @@
-import { Box, Heading, Text, VStack, Button, SimpleGrid, HStack, Badge } from '@chakra-ui/react';
-import { Link } from 'react-router-dom';
+// src/pages/admin/AdminOverviewPage.tsx
+import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
+import { PageHeader } from '@/components/PageHeader';
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
+import { useNavigate } from 'react-router-dom';
+import { getRequest } from '@/api/requests';
+
+// API 응답에 맞는 타입 정의
+type AdminItem = {
+  id: number;
+  universityId: number;
+  organizationId: number;
+  name: string;
+  description: string;
+  totalQuantity: number;
+  availableQuantity: number;
+  countWaitList: number;
+  isActive: boolean;
+  isBooked: boolean;
+  coverKey: string | null;
+};
+
+type AdminItemsResponse = {
+  content: AdminItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+};
 
 export default function AdminOverviewPage() {
+  const navigate = useNavigate();
+  const [items, setItems] = useState<AdminItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // API 호출 함수
+  const fetchAdminItems = async () => {
+    try {
+      setLoading(true);
+
+      const data: AdminItemsResponse = await getRequest<AdminItemsResponse>(
+        '/admin/items?page=0&size=20&sort=id,asc'
+      );
+
+      setItems(data.content);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminItems();
+  }, []);
+
+  // 상세보기 -> 라우팅
+  const handleInfo = (id: number) => {
+    navigate(`/admin/overview/${id}`);
+  };
+
+  if (loading) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor="transparent"
+          title="물품 관리"
+          subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
+        />
+        <Text>로딩 중...</Text>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor="transparent"
+          title="물품 관리"
+          subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
+        />
+        <Text color="red.500">오류: {error}</Text>
+        <Button label="다시 시도" onClick={fetchAdminItems} mt={4} />
+      </Box>
+    );
+  }
+
   return (
-    <Box p={6}>
-      <VStack gap={8} align="center">
-        <Heading size="xl" color="blue.600">
-          📊 현황 (실시간/지표)
-        </Heading>
+    <Box px={10}>
+      <PageHeader
+        px={0}
+        py={10}
+        bgColor="transparent"
+        title="물품 관리"
+        subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
+      />
 
-        <Text fontSize="lg" textAlign="center" color="gray.600">
-          실시간 대여 현황과 주요 지표를 확인하세요
+      <Flex justify="space-between" mt={2} gap={2}>
+        <Text fontSize="sm" color="gray.500">
+          총 {items.length}개의 물품
         </Text>
+        <Flex gap={2}>
+          <Button label="최신순 ^" variant="text" size="sm" />
+          <Button label="물품 등록하기" size="sm" onClick={() => navigate('/admin/items/create')} />
+        </Flex>
+      </Flex>
 
-        {/* 실시간 통계 */}
-        <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} w="full" maxW="900px">
-          <Box
-            p={6}
-            border="1px solid"
-            borderColor="blue.200"
-            rounded="lg"
-            bg="blue.50"
-            textAlign="center"
-          >
-            <Text fontSize="lg" color="blue.600" mb={2}>
-              🔄 현재 대여중
-            </Text>
-            <Text fontSize="4xl" fontWeight="bold" color="blue.700">
-              42
-            </Text>
-            <Text fontSize="sm" color="blue.600" mt={2}>
-              총 50개 중
-            </Text>
-            <Box mt={3} w="full" bg="blue.200" rounded="full" h="8px">
-              <Box w="84%" bg="blue.500" h="8px" rounded="full" />
-            </Box>
-          </Box>
-
-          <Box
-            p={6}
-            border="1px solid"
-            borderColor="green.200"
-            rounded="lg"
-            bg="green.50"
-            textAlign="center"
-          >
-            <Text fontSize="lg" color="green.600" mb={2}>
-              ✅ 오늘 반납
-            </Text>
-            <Text fontSize="4xl" fontWeight="bold" color="green.700">
-              18
-            </Text>
-            <Text fontSize="sm" color="green.600" mt={2}>
-              정시 반납률 95%
-            </Text>
-            <Box mt={3} w="full" bg="green.200" rounded="full" h="8px">
-              <Box w="95%" bg="green.500" h="8px" rounded="full" />
-            </Box>
-          </Box>
-
-          <Box
-            p={6}
-            border="1px solid"
-            borderColor="orange.200"
-            rounded="lg"
-            bg="orange.50"
-            textAlign="center"
-          >
-            <Text fontSize="lg" color="orange.600" mb={2}>
-              ⏰ 대기 신청
-            </Text>
-            <Text fontSize="4xl" fontWeight="bold" color="orange.700">
-              7
-            </Text>
-            <Text fontSize="sm" color="orange.600" mt={2}>
-              평균 대기시간 2시간
-            </Text>
-            <Box mt={3} w="full" bg="orange.200" rounded="full" h="8px">
-              <Box w="70%" bg="orange.500" h="8px" rounded="full" />
-            </Box>
-          </Box>
-        </SimpleGrid>
-
-        {/* 상세 현황 */}
-        <Box w="full" maxW="900px">
-          <Heading size="md" mb={4} color="gray.700">
-            📋 상세 현황
-          </Heading>
-          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-              <Text fontWeight="bold" mb={2}>
-                🔥 인기 대여 품목
-              </Text>
-              <VStack gap={2} align="stretch">
-                <HStack justify="space-between">
-                  <Text>노트북</Text>
-                  <Badge colorScheme="red">15대 대여중</Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text>프로젝터</Text>
-                  <Badge colorScheme="orange">8대 대여중</Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text>카메라</Text>
-                  <Badge colorScheme="yellow">6대 대여중</Badge>
-                </HStack>
-              </VStack>
-            </Box>
-
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md">
-              <Text fontWeight="bold" mb={2}>
-                ⚠️ 주의 필요
-              </Text>
-              <VStack gap={2} align="stretch">
-                <HStack justify="space-between">
-                  <Text>지연 반납</Text>
-                  <Badge colorScheme="red">1건</Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text>장비 고장</Text>
-                  <Badge colorScheme="orange">2건</Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text>분실 신고</Text>
-                  <Badge colorScheme="yellow">0건</Badge>
-                </HStack>
-              </VStack>
-            </Box>
-          </SimpleGrid>
-        </Box>
-
-        {/* 액션 버튼 */}
-        <HStack gap={4} wrap="wrap" justify="center">
-          <Button colorScheme="blue" size="lg">
-            실시간 새로고침
-          </Button>
-          <Button colorScheme="green" size="lg">
-            보고서 생성
-          </Button>
-          <Button variant="outline" size="lg">
-            상세 분석
-          </Button>
-        </HStack>
-
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/admin">← 관리자 메인으로 돌아가기</Link>
-        </Button>
+      <VStack gap={2} align="stretch" mt={2}>
+        {items.map((item) => (
+          <Card
+            key={item.id}
+            image={
+              item.coverKey ? (
+                <Image src={item.coverKey} alt={item.name} objectFit="cover" w="100%" h="200px" />
+              ) : (
+                <Box
+                  bg="gray.200"
+                  w="100%"
+                  h="200px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text color="gray.500">이미지 없음</Text>
+                </Box>
+              )
+            }
+            title={item.name}
+            subtitle={item.description}
+            bottomExtra={
+              <Flex justify="space-between" w="100%" align="flex-end">
+                <Flex direction="column" gap={1}>
+                  <Text fontSize="sm" color="gray.500">
+                    총 수량: {item.totalQuantity}개
+                  </Text>
+                  <Text fontSize="sm" color="gray.500">
+                    대여 가능: {item.availableQuantity}개
+                  </Text>
+                  {item.countWaitList > 0 && (
+                    <Text fontSize="sm" color="orange.500">
+                      대기자: {item.countWaitList}명
+                    </Text>
+                  )}
+                </Flex>
+                <Flex gap={2}>
+                  <Button
+                    size="sm"
+                    label="상세보기"
+                    colorScheme="green"
+                    onClick={() => handleInfo(item.id)}
+                  />
+                </Flex>
+              </Flex>
+            }
+          />
+        ))}
       </VStack>
     </Box>
   );
