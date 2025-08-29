@@ -1,9 +1,7 @@
-import { Box, Text, VStack, Flex, Image, Container, Badge } from '@chakra-ui/react';
+import { Box, Text, VStack, Flex, Image, Badge } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
-import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/Card';
-import { SearchInput } from '@/components/Input';
 import { useModalStore } from '@/stores/modalStore';
 import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
@@ -22,13 +20,6 @@ interface QRTokenResponse {
 //   availableQuantity < totalQuantity면 대여가능
 // countWaitList < totalQuantity면 대기열 가능
 // countWaitList >= totalQuantity면 대기열 불가능
-
-interface ApiResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-}
 
 // API 응답 타입 정의
 interface HoldingItem {
@@ -116,40 +107,47 @@ export default function QrRentPage() {
     }
   }, [token]);
 
-  const dummyContent =
-    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
-
-  const [query, setQuery] = useState('');
-  const [lastSearched, setLastSearched] = useState('');
-
-  const handleSearch = () => {
-    // 이 자리에서 API 호출 또는 필터링 로직 실행
-    setLastSearched(query);
-    console.log('검색 실행:', query);
-  };
-
   // 데이터 상태를 HoldingItem 타입으로 변경
   const [data, setData] = useState<HoldingItem[]>([]);
 
-  const basicOptions: SegmentOption[] = [
-    { value: 'all', label: '전체' },
-    { value: 'school', label: '학교' },
-    { value: 'middle', label: '총학' },
-    { value: 'subject', label: '학과' },
-  ];
+  // 대여 확정 API 호출 함수 추가
+  const handleApproveRental = async (item: HoldingItem) => {
+    try {
+      // 대여 확정 API 호출 (RESERVED → RENTED)
+      const response = await postRequest(`/rental-requests/${item.rentalId}/approve`);
 
-  const [selectedValue, setSelectedValue] = useState(basicOptions[0].value);
+      console.log('대여 확정 성공:', response);
 
-  // 풀스크린 모달을 여는 함수
+      // 성공 시 결과 모달 표시
+      handleResultModal(item);
+    } catch (error: any) {
+      console.error('대여 확정 실패:', error);
+
+      let errorMessage = '대여 확정 중 오류가 발생했습니다.';
+
+      if (error.response?.status === 400) {
+        errorMessage = '만료되었거나 상태 전이가 불가능합니다.';
+      } else if (error.response?.status === 403) {
+        errorMessage = '본인이 소유한 예약이 아닙니다.';
+      } else if (error.response?.status === 404) {
+        errorMessage = '예약을 찾을 수 없습니다.';
+      }
+
+      alert(`대여 확정 실패: ${errorMessage}`);
+    }
+  };
+
+  // 첫 번째 모달 수정
   const handleOpenModal = (item: HoldingItem) => {
     openModal({
-      title: `${item?.id}번 물품이 배정되었습니다!`, // [todo]:
-      caption: `${item?.id}번 물품을 가져가세요!`,
+      title: `${item?.assetNo}번 물품이 배정되었습니다!`,
+      caption: `${item?.assetNo}번 물품을 가져가세요!`, // id → assetNo로 통일
       body: (
         <Button
           w="full"
           onClick={() => {
-            handleResultModal(item);
+            closeModal(); // 첫 번째 모달 닫기
+            handleApproveRental(item); // 대여 확정 API 호출
           }}
           label="대여하기"
         ></Button>
@@ -157,7 +155,8 @@ export default function QrRentPage() {
     });
   };
 
-  const handleResultModal = (item: Item) => {
+  // 결과 모달 수정
+  const handleResultModal = (item: HoldingItem) => {
     openModal({
       title: '대여가 완료되었습니다.',
       caption:
@@ -166,7 +165,8 @@ export default function QrRentPage() {
         <Button
           w="full"
           onClick={() => {
-            navigate('/rent');
+            closeModal(); // 모달 닫기
+            navigate('/'); // 홈으로 이동
           }}
           label="홈으로 가기"
         ></Button>
@@ -216,7 +216,7 @@ export default function QrRentPage() {
 
       // 실제 API 호출하여 홀딩 중인 물품 가져오기
       const res = await getRequest<HoldingItem[]>(
-        `http://43.200.61.108:8082/api/rental-requests/${currentOrganizationId}/holding`
+        `/rental-requests/${currentOrganizationId}/holding`
       );
 
       if (res && Array.isArray(res)) {
@@ -248,25 +248,11 @@ export default function QrRentPage() {
     }
   };
 
-  const handleBook = (itemId: number) => {
-    // api 요청
-    try {
-      const request = async () => {
-        // [todo] api 수정
-        const res = await postRequest(`http://43.200.61.108:8082/api/waitlists/items/${itemId}`);
-        alert('완료!');
-        closeModal();
-        fetchListData();
-      };
-      request();
-    } catch {}
-  };
-
   useEffect(() => {
     try {
       fetchListData();
     } catch {}
-  }, [selectedValue]);
+  }, []); // selectedValue 의존성 제거
 
   // QR 토큰 정보 표시 컴포넌트
   const renderQRTokenInfo = () => {
