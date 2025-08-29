@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, VStack, Container, Text } from '@chakra-ui/react';
 import { Button } from '@/components/Button'; // 경로는 프로젝트 구조에 맞게 조정
 import { PageHeader } from '@/components/PageHeader'; // 경로는 프로젝트 구조에 맞게 조정

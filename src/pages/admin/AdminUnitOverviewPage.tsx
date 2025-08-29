@@ -1,5 +1,5 @@
 // src/pages/admin/AdminUnitOverviewPage.tsx
-import { Box, Text, VStack } from '@chakra-ui/react';
+import { Box, Text, VStack, Image } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
 import { useMemo, useState, useEffect } from 'react';
 import { Card } from '@/components/Card';
@@ -157,21 +157,36 @@ export default function AdminUnitOverviewPage() {
           const isRented = unit.status === 'RENTED';
           const isAvailable = unit.status === 'AVAILABLE';
 
+          // 해당 유닛의 assetNo와 일치하는 사진 찾기
+          const unitPhoto = itemDetail.photos.find((photo) => photo.assetNo === unit.assetNo);
+
           return (
             <Card
               key={unit.id}
               image={
-                <Text fontSize="4xl" fontWeight="bold" color="gray.500" lineHeight="80px">
-                  {unit.assetNo}
-                </Text>
+                unitPhoto ? (
+                  <Image
+                    src={unitPhoto.imageUrl}
+                    alt={`${unit.assetNo}번 사진`}
+                    objectFit="cover"
+                    w="100%"
+                    h="200px"
+                  />
+                ) : (
+                  <Text fontSize="4xl" fontWeight="bold" color="gray.500" lineHeight="80px">
+                    {unit.assetNo}
+                  </Text>
+                )
               }
-              title={'물품번호'}
+              title={`${unit.assetNo}번`} // 물품번호를 받아온 값으로 표시
               extra={
                 isRented ? (
                   <Tag label="대여 중" variant="error" />
                 ) : isAvailable ? (
                   <Tag label="대여 가능" variant="default" />
-                ) : null // 다른 상태값이면 태그 표시 안함
+                ) : (
+                  <Tag label={unit.status} variant="default" /> // 받아온 상태값 표시
+                )
               }
               subtitle={
                 isRented && unit.currentRental
@@ -180,7 +195,7 @@ export default function AdminUnitOverviewPage() {
                     ).toLocaleDateString()}`
                   : isAvailable
                   ? `대여 가능한 상태입니다`
-                  : `상태: ${unit.status}` // 다른 상태값이면 해당 상태를 표시
+                  : `상태: ${unit.status}` // 받아온 상태값 표시
               }
             />
           );

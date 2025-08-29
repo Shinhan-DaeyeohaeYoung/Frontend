@@ -8,8 +8,6 @@ import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useAuthStore } from '@/stores/authStore';
 import { postRequest } from '@/api/requests'; // 추가
 
-type ImageLike = { id: string; file: File; url: string };
-
 export default function ItemCreatePage() {
   const navigate = useNavigate();
   const { universityId, user } = useAuthStore(); // authStore에서 값들 가져오기

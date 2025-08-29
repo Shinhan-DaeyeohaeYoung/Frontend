@@ -1,8 +1,7 @@
 // src/pages/admin/AdminUnitCreatePage.tsx
 import * as React from 'react';
-import { Box, VStack, Textarea, Input } from '@chakra-ui/react';
+import { Box, VStack } from '@chakra-ui/react';
 import { Button } from '@/components/Button';
-import TextInput from '@/components/Input/TextInput';
 import ImagePickerGrid from '@/components/Input/ImagePickerGrid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
@@ -29,7 +28,6 @@ export default function UnitCreatePage() {
   // 이전 페이지에서 전달받은 아이템 정보
   const { createdItemId, createdItemName } = location.state || {};
 
-  const [assetNo, setAssetNo] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [status, setStatus] = React.useState('AVAILABLE');
   const [images, setImages] = React.useState<ImageLike[]>([]);
@@ -62,6 +60,11 @@ export default function UnitCreatePage() {
     for (const image of newImages) {
       try {
         // 1. Presigned URL 발급
+        console.log('Presigned URL 요청 데이터:', {
+          imageType: 'UNIT',
+          fileName: image.file.name,
+        });
+
         const presignedResponse = await postRequest<PresignedUrlResponse>(
           '/images/presign/upload',
           {
@@ -70,7 +73,10 @@ export default function UnitCreatePage() {
           }
         );
 
-        // 2. S3에 직접 업로드
+        console.log('Presigned URL 응답:', presignedResponse);
+
+        // 2. S3에 직접 업로드 (fetch 사용)
+        console.log('S3 업로드 요청 시작:', presignedResponse.url);
         const uploadResponse = await fetch(presignedResponse.url, {
           method: 'PUT',
           body: image.file,
@@ -78,13 +84,25 @@ export default function UnitCreatePage() {
             'Content-Type': image.file.type,
           },
         });
+        console.log('S3 업로드 응답:', uploadResponse);
 
         if (uploadResponse.ok) {
           // 업로드 성공
+          console.log('S3 업로드 성공:', presignedResponse.key);
+
+          // API 요청에 필요한 정보들을 저장 (key만 실제 값, 나머지는 null)
           setImages((prev) =>
             prev.map((img) =>
               img.id === image.id
-                ? { ...img, uploadStatus: 'success', s3Key: presignedResponse.key }
+                ? {
+                    ...img,
+                    uploadStatus: 'success',
+                    s3Key: presignedResponse.key,
+                    // 나머지는 null로 설정
+                    mime: null,
+                    hash: null,
+                    takenAt: null,
+                  }
                 : img
             )
           );
@@ -119,8 +137,6 @@ export default function UnitCreatePage() {
   };
 
   const validate = () => {
-    if (!assetNo.trim()) return '자산번호를 입력해주세요.';
-    if (!description.trim()) return '설명을 입력해주세요.';
     if (images.length === 0) return '최소 1장의 이미지를 첨부해주세요.';
 
     // 모든 이미지가 업로드 완료되었는지 확인
@@ -137,14 +153,34 @@ export default function UnitCreatePage() {
       return;
     }
 
-    // 여기서 unit 생성 API 호출 예정
-    console.log('업로드된 이미지들:', images);
-    console.log(
-      'S3 Keys:',
-      images.map((img) => img.s3Key)
-    );
+    try {
+      // API 요청에 맞는 형태로 데이터 구성 (이미지 순서대로 1번, 2번... 자동 부여)
+      const unitsData = {
+        units: images.map((img, index) => ({
+          assetNo: `${index + 1}`, // 예: "A001-1", "A001-2", "A001-3"
+          description: description,
+          status: status,
+          photo: {
+            key: img.s3Key!,
+            mime: null,
+            hash: null,
+            takenAt: null,
+          },
+        })),
+      };
 
-    alert('업로드 완료! API 응답을 확인해보세요.');
+      console.log('API 요청 데이터:', unitsData);
+
+      // API 호출
+      const response = await postRequest(`/admin/items/${createdItemId}/units`, unitsData);
+      console.log('API 응답:', response);
+
+      alert('유닛 생성 완료!');
+      navigate('/admin/overview');
+    } catch (error) {
+      console.error('API 호출 실패:', error);
+      alert('유닛 생성에 실패했습니다.');
+    }
   };
 
   return (
@@ -167,37 +203,6 @@ export default function UnitCreatePage() {
           handleSubmit();
         }}
       >
-        {/* 자산번호 */}
-        <TextInput
-          placeholder="자산번호를 입력해주세요"
-          value={assetNo}
-          onChange={(e) => setAssetNo(e.target.value)}
-        />
-
-        {/* 설명 */}
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="개체에 대한 설명을 입력해주세요"
-          minH="120px"
-          bg="white"
-          borderRadius="xl"
-          borderColor="gray.300"
-          _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
-        />
-
-        {/* 상태 선택 */}
-        <Input
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          placeholder="상태 (예: AVAILABLE, MAINTENANCE, BROKEN)"
-          h="36px"
-          bg="white"
-          borderRadius="xl"
-          borderColor="gray.300"
-          _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
-        />
-
         {/* 사진 영역 */}
         <ImagePickerGrid
           images={images}

@@ -35,3 +35,11 @@ export const deleteRequest = async <T = unknown>(url: string, config?: AxiosRequ
   const response = await api.delete<T>(url, config);
   return response.data;
 };
+export const putRequest = async <T = unknown, D = unknown>(
+  url: string,
+  data?: D,
+  config?: AxiosRequestConfig
+) => {
+  const response = await api.put<T>(url, data, config);
+  return response.data;
+};

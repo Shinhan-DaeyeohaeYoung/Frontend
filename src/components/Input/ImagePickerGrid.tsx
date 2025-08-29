@@ -63,7 +63,6 @@ export default function ImagePickerGrid({ images, onAdd, onRemove }: ImagePicker
               bg="gray.50"
             >
               {/* 실제 썸네일 */}
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <img
                 src={img.url}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
@@ -92,7 +91,7 @@ export default function ImagePickerGrid({ images, onAdd, onRemove }: ImagePicker
                 bg="blackAlpha.600"
               >
                 <Text color="white" fontSize="xs" lineHeight="1">
-                  사진 {i + 1}번
+                  {i + 1}번
                 </Text>
               </Box>
             </Box>

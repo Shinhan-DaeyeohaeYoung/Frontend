@@ -17,7 +17,7 @@ import AdminItemCreatePage from '@/pages/admin/AdminItemCreatePage';
 import RentPage from '@/pages/rent/RentPage';
 import ReturnListPage from '@/pages/return/ReturnListPage';
 import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
-import AdminItemOverviewPage from '@/pages/admin/AdminUnitOverviewPage';
+import AdminUnitOverviewPage from '@/pages/admin/AdminUnitOverviewPage';
 import ReservationQueuePage from '@/pages/mypage/ReservationQueuePage';
 import RentHistoryPage from '@/pages/mypage/RentHistoryPage';
 import UniversityPage from '@/pages/mypage/UniversityPage';
@@ -53,7 +53,7 @@ export default function AppRoutes() {
       {/* 관리자 페이지 */}
       <Route path="/admin" element={<AdminMainPage />} />
       <Route path="/admin/overview" element={<AdminOverviewPage />} />
-      <Route path="/admin/overview/:itemId" element={<AdminItemOverviewPage />} />
+      <Route path="/admin/overview/:itemId" element={<AdminUnitOverviewPage />} />
       <Route path="/admin/items/create" element={<AdminItemCreatePage />} />
       <Route path="/admin/qr" element={<AdminQrPage />} />
       <Route path="/admin/reports" element={<AdminReportsPage />} />
