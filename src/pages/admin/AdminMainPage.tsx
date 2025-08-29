@@ -1,93 +1,97 @@
 import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/Card';
 import { useModalStore } from '@/stores/modalStore';
 import { Tag } from '@/components/Tag';
 import { Button } from '@/components/Button';
+import { getRequest } from '@/api/requests';
+import { useAuthStore } from '@/stores/authStore';
 import AprovalDetailModalContent from './components/AprovalDetailModalContent';
 
-export default function RentPage() {
-  const response = {
-    content: [
-      {
-        id: 1,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '길태은(1335841)',
-        submissionNumber: '250821',
-        category: '3번 충전기',
-        status: 'pending',
-        overdueDays: 7,
-        coverKey: 'univ/1/items/1/units/501.jpg',
-      },
-      {
-        id: 2,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '신승용(1335874)',
-        submissionNumber: '250820',
-        category: '4번 충전기',
-        status: 'pending',
-        overdueDays: null,
-        coverKey: 'univ/1/items/1/units/502.jpg',
-      },
-      {
-        id: 3,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '안수진(13322058)',
-        submissionNumber: '250818',
-        category: '5번 충전기',
-        status: 'pending',
-        overdueDays: null,
-        coverKey: 'univ/1/items/1/units/503.jpg',
-      },
-      {
-        id: 4,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '이지혜(13302156)',
-        submissionNumber: '250818',
-        category: '6번 충전기',
-        status: 'pending',
-        overdueDays: null,
-        coverKey: 'univ/1/items/1/units/504.jpg',
-      },
-    ],
-    page: 0,
-    size: 20,
-    totalElements: 4,
+// 반납 신청 타입 정의
+interface ReturnRequest {
+  id: number;
+  universityId: number;
+  organizationId: number;
+  rentalId: number;
+  userId: number;
+  status: string;
+  submittedImageKey: string;
+  submittedImageUrl: string;
+  requestedAt: string;
+  isActive: boolean;
+}
+
+// API 응답 타입
+interface ReturnRequestResponse {
+  content: ReturnRequest[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+export default function AdminMainPage() {
+  const { openModal, closeModal } = useModalStore();
+  const { user } = useAuthStore();
+
+  const [data, setData] = useState<ReturnRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 반납 신청 목록 가져오기
+  const fetchReturnRequests = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // 사용자의 조직 정보에서 organizationId 가져오기
+      const organizationId =
+        user?.organizationInfo?.university?.id ||
+        user?.organizationInfo?.college?.id ||
+        user?.organizationInfo?.department?.id;
+
+      if (!organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      // API 호출
+      const response = await getRequest<ReturnRequestResponse>(
+        `/admin/return-requests?status=REQUESTED&page=0&size=20&organizationId=${organizationId}`
+      );
+
+      if (response && response.content) {
+        setData(response.content);
+        console.log('반납 신청 목록:', response.content);
+      } else {
+        setData([]);
+      }
+    } catch (error) {
+      console.error('반납 신청 목록 가져오기 실패:', error);
+      setError('데이터를 가져오는 중 오류가 발생했습니다.');
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const { openModal, closeModal } = useModalStore();
+  // 컴포넌트 마운트 시 데이터 가져오기
+  useEffect(() => {
+    fetchReturnRequests();
+  }, []);
 
-  const [data] = useState(response.content);
   // 풀스크린 모달을 여는 함수
-  const handleOpenItemModal = (item: any) => {
+  const handleOpenItemModal = (item: ReturnRequest) => {
     openModal({
-      title: `${item.category} 반납 승인`,
+      title: `반납 신청 승인`,
       caption: '반납 상태를 확인하고 승인 처리해주세요',
-      body: <AprovalDetailModalContent itemId={item.id} />,
-      footer: (
-        <Flex gap={2} w="full">
-          <Button flex={1} label={'취소'} onClick={() => closeModal()}></Button>
-          <Button
-            label={'승인하기'}
-            flex={1}
-            colorScheme="green"
-            onClick={() => {
-              // 승인 처리 로직
-              console.log('승인 처리:', item.id);
-              closeModal();
-            }}
-          ></Button>
-        </Flex>
-      ),
+      body: <AprovalDetailModalContent returnRequestId={item.id} />, // item.id는 반납 요청 ID
+      footer: '',
       fullscreen: true, // 풀스크린 모드 활성화
     });
   };
@@ -101,6 +105,43 @@ export default function RentPage() {
     }
   };
 
+  // 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor={'transparent'}
+          title={'승인 대기 중'}
+          subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
+        />
+        <Box textAlign="center" py={20}>
+          <Text>데이터를 불러오는 중...</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  // 에러 상태 표시
+  if (error) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor={'transparent'}
+          title={'승인 대기 중'}
+          subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
+        />
+        <Box textAlign="center" py={20}>
+          <Text color="red.500">{error}</Text>
+          <Button mt={4} onClick={fetchReturnRequests} label="다시 시도" />
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box px={10}>
       <PageHeader
@@ -111,38 +152,52 @@ export default function RentPage() {
         subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
       />
 
-      <Flex justify={'flex-end'} mt={2}>
-        <Button label={'최신순 ^'} variant={'text'} size={'sm'}></Button>
+      <Flex justify={'space-between'} mt={2}>
+        <Text fontSize="sm" color="gray.500">
+          총 {data.length}개의 반납 신청
+        </Text>
+        <Button label={'최신순 ^'} variant={'text'} size={'sm'} onClick={fetchReturnRequests} />
       </Flex>
 
-      <VStack gap={2} align="stretch" mt={2}>
-        {data.map((el) => (
-          <Card
-            key={el.id}
-            image={
-              <Image src="https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg" />
-            }
-            title={el.category}
-            subtitle={`대여한 사람 : ${el.submitter}`}
-            extra={el.overdueDays && <Tag label={`연체(${el.overdueDays}일)`} variant="error" />}
-            bottomExtra={
-              <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
-                <Text fontSize={'sm'} color={'gray.500'}>
-                  반납일: {el.submissionNumber}
-                </Text>
-                <Flex>
-                  <Button
-                    size="sm"
-                    label={'확인하기'}
-                    colorScheme="green"
-                    onClick={() => handleInfo(el.id)}
-                  />
+      {data.length === 0 ? (
+        <Box textAlign="center" py={20}>
+          <Text color="gray.500">승인 대기 중인 반납 신청이 없습니다.</Text>
+        </Box>
+      ) : (
+        <VStack gap={2} align="stretch" mt={2}>
+          {data.map((el) => (
+            <Card
+              key={el.id}
+              image={
+                <Image
+                  src={
+                    el.submittedImageUrl || 'https://via.placeholder.com/300x200?text=이미지+없음'
+                  }
+                  alt="반납 이미지"
+                />
+              }
+              title={`반납 신청 #${el.id}`}
+              subtitle={`대여 ID: ${el.rentalId} | 사용자 ID: ${el.userId}`}
+              extra={<Tag label={el.status} variant="default" />}
+              bottomExtra={
+                <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
+                  <Text fontSize={'sm'} color={'gray.500'}>
+                    신청일: {new Date(el.requestedAt).toLocaleDateString('ko-KR')}
+                  </Text>
+                  <Flex>
+                    <Button
+                      size="sm"
+                      label={'확인하기'}
+                      colorScheme="green"
+                      onClick={() => handleInfo(el.id)}
+                    />
+                  </Flex>
                 </Flex>
-              </Flex>
-            }
-          />
-        ))}
-      </VStack>
+              }
+            />
+          ))}
+        </VStack>
+      )}
     </Box>
   );
 }
