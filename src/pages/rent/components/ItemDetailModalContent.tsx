@@ -14,55 +14,63 @@ import {
   Flex,
 } from '@chakra-ui/react';
 // import StickyActionButton from './StickyActionButton' // 쓰는 중이면
+import { getRequest, postRequest } from '@/api/requests';
+
+// API 응답 타입 정의 수정 (any 타입 제거)
+interface ItemDetail {
+  id: number;
+  universityId: number;
+  organizationId: number;
+  name: string;
+  description: string;
+  deposit: number;
+  maxRentalDays: number;
+  totalQuantity: number;
+  availableQuantity: number;
+  countWaitList: number;
+  isActive: boolean;
+  unitStats: {
+    AVAILABLE: number;
+    RESERVED: number;
+    RENTED: number;
+    REPAIR: number;
+    LOST: number;
+    DISPOSED: number;
+  };
+  photos: Array<{
+    assetNo: string;
+    key: string;
+    imageUrl: string;
+  }>;
+  units: {
+    content: Array<{
+      id: number;
+      itemId: number;
+      status: string;
+      assetNo: string;
+      currentRental: null | {
+        rentalId: number;
+        userId: number;
+        dueAt: string;
+      };
+    }>;
+    page: number;
+    size: number;
+    totalElements: number;
+  };
+}
+
+// 홀딩 예약 응답 타입 추가
+interface ReservationResponse {
+  id: number;
+  status: string;
+  itemId: number;
+  unitId: number;
+  reservedAt: string;
+  reserveExpiresAt: string;
+}
 
 const formatKRW = (v: number) => `${v.toLocaleString('ko-KR')}원`;
-const MOCK_ITEM_DETAIL: ItemDetail = {
-  id: 2,
-  universityId: 1,
-  organizationId: 2,
-  name: '충전기',
-  description: 'C타입 65W 충전기',
-  deposit: 10000,
-  maxRentalDays: 7,
-  totalQuantity: 2,
-  availableQuantity: 2,
-  isActive: true,
-  unitStats: {
-    AVAILABLE: 2,
-    RESERVED: 0,
-    RENTED: 0,
-    REPAIR: 0,
-    LOST: 0,
-    DISPOSED: 0,
-  },
-  photos: [
-    {
-      assetNo: '501',
-      key: 'univ/1/items/1/units/501.jpg',
-    },
-  ],
-  units: {
-    content: [
-      {
-        id: 3,
-        itemId: 2,
-        status: 'AVAILABLE',
-        assetNo: '501',
-        currentRental: null,
-      },
-      {
-        id: 4,
-        itemId: 2,
-        status: 'AVAILABLE',
-        assetNo: '502',
-        currentRental: null,
-      },
-    ],
-    page: 0,
-    size: 50,
-    totalElements: 2,
-  },
-};
 
 export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
   const [data, setData] = useState<ItemDetail | null>(null);
@@ -79,9 +87,20 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
     (async () => {
       try {
         if (!mounted) return;
-        // 🔽 실제 API 대신 임시 데이터 주입
-        setData(MOCK_ITEM_DETAIL);
-        setSelectedUnitId(MOCK_ITEM_DETAIL.units?.content?.[0]?.id);
+
+        // 하드코딩된 URL 제거하고 환경변수 기반으로 변경
+        const res = await getRequest<ItemDetail>(`/items/${itemId}`);
+
+        if (mounted) {
+          setData(res);
+          // 대여 가능한 첫 번째 unit을 기본 선택으로 설정
+          const firstAvailableUnit = res.units?.content?.find((u) => u.status === 'AVAILABLE');
+          if (firstAvailableUnit) {
+            setSelectedUnitId(firstAvailableUnit.id);
+          }
+        }
+      } catch (error) {
+        console.error('아이템 상세 조회 실패:', error);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -91,9 +110,10 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
     };
   }, [itemId]);
 
+  // 대여 가능한 unit만 필터링 (이미 있음)
   const availableUnits = useMemo(
-    () => (data?.units.content ?? []).filter((u) => u.status === 'AVAILABLE'),
-    [data?.units.content]
+    () => (data?.units?.content ?? []).filter((u) => u.status === 'AVAILABLE'),
+    [data?.units?.content]
   );
 
   // (옵션) 간단 페이징
@@ -112,10 +132,48 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
   const rent = useCallback(async () => {
     if (!data || !selectedUnitId) return;
+
     try {
       setRenting(true);
-      // await postRequest('/rentals', { itemId: data.id, unitId: selectedUnitId });
-      // 성공 처리(토스트 + 모달 닫기 등)
+
+      // 홀딩 예약 API 호출
+      const reservation = await postRequest<ReservationResponse>('/rental-requests/reservations', {
+        itemId: data.id,
+        unitId: selectedUnitId,
+        ttlMinutes: 30, // 30분 홀딩
+      });
+
+      console.log('홀딩 예약 성공:', reservation);
+
+      // 성공 처리
+      alert(
+        `물품이 30분간 홀딩되었습니다!\n만료시간: ${new Date(
+          reservation.reserveExpiresAt
+        ).toLocaleString('ko-KR')}`
+      );
+
+      // 모달 닫기 (필요시)
+      // closeModal();
+
+      // 데이터 새로고침 (선택사항)
+      // window.location.reload();
+    } catch (error: unknown) {
+      console.error('홀딩 예약 실패:', error);
+
+      let errorMessage = '홀딩 중 오류가 발생했습니다.';
+
+      // 타입 단언으로 error 타입 지정
+      const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+
+      if (axiosError.response?.status === 409) {
+        errorMessage = '이미 대여중이거나 예약할 수 없는 상태입니다.';
+      } else if (axiosError.response?.status === 404) {
+        errorMessage = '아이템 또는 유닛을 찾을 수 없습니다.';
+      } else if (axiosError.response?.data?.message) {
+        errorMessage = axiosError.response.data.message;
+      }
+
+      alert(`홀딩 실패: ${errorMessage}`);
     } finally {
       setRenting(false);
     }
@@ -135,7 +193,8 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
       </Box>
     );
 
-  const mainPhoto = data.photos?.[0]?.key;
+  // mainPhoto 변수 활성화
+  const mainPhoto = data.photos?.[0]?.imageUrl;
   const selectedUnit = data.units.content.find((u) => u.id === selectedUnitId) || null;
   // ✔️ 상세/선택 화면 공통 하이라이트 기준
   const highlightId = view === 'selectUnit' ? pendingSelectedUnitId : selectedUnitId;
@@ -197,15 +256,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
           <>
             <AspectRatio ratio={16 / 9} w="100%" h="360px">
               {mainPhoto ? (
-                <Image
-                  // [todo]: 이미지 주소 응답값을 수정
-                  src={
-                    /* getAssetUrl(mainPhoto) */ 'https://1801889e95b1f9bf.kinxzone.com/webfile/product/9/9755/b1khuy9y3s1k.jpg'
-                  }
-                  alt={data.name}
-                  objectFit="cover"
-                  bg="gray.100"
-                />
+                <Image src={mainPhoto || ''} alt={data.name} objectFit="cover" bg="gray.100" />
               ) : (
                 <Box
                   border="2px dashed"
@@ -266,62 +317,108 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
         {/* ── 전체 선택 화면 ──────────────────────────────────────── */}
         {view === 'selectUnit' && (
           <>
-            <Text fontWeight="semibold">대여 가능한 전체 목록</Text>
+            <Text fontWeight="semibold">대여 가능한 전체 목록 ({availableUnits.length}개)</Text>
 
-            <SimpleGrid columns={2} gap={3}>
-              {pagedUnits.map((u) => {
-                const active = u.id === highlightId; // ✅ 기존: selectedUnitId → 수정: highlightId
-                return (
-                  <VStack
-                    key={u.id}
-                    border="1px solid"
-                    borderColor={active ? 'pink.400' : 'gray.300'}
-                    rounded="md"
-                    bg="white"
-                    p={3}
-                    gap={2}
-                    cursor="pointer"
-                    onClick={() => setPendingSelectedUnitId(u.id)} // ✅ 확정 아님, 임시만
-                  >
-                    <Box
-                      w="100%"
-                      h="72px"
-                      bg="gray.100"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
+            {availableUnits.length === 0 ? (
+              <Box
+                textAlign="center"
+                py={8}
+                color="gray.500"
+                border="1px dashed"
+                borderColor="gray.300"
+                rounded="md"
+              >
+                <Text>현재 대여 가능한 물품이 없습니다.</Text>
+                <Text fontSize="sm" mt={2}>
+                  다른 물품을 선택해주세요.
+                </Text>
+              </Box>
+            ) : (
+              <>
+                <SimpleGrid columns={2} gap={3}>
+                  {pagedUnits.map((u) => {
+                    const active = u.id === highlightId;
+                    return (
+                      <VStack
+                        key={u.id}
+                        border="1px solid"
+                        borderColor={active ? 'pink.400' : 'gray.300'}
+                        rounded="md"
+                        bg="white"
+                        p={3}
+                        gap={2}
+                        cursor="pointer"
+                        onClick={() => setPendingSelectedUnitId(u.id)}
+                        _hover={{
+                          borderColor: 'blue.300',
+                          transform: 'translateY(-2px)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <Box
+                          w="100%"
+                          h="72px"
+                          bg="gray.100"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          rounded="md"
+                          overflow="hidden"
+                        >
+                          {/* 실제 이미지가 있으면 표시, 없으면 기본 텍스트 */}
+                          {data?.photos?.find((p) => p.assetNo === u.assetNo)?.imageUrl ? (
+                            <Image
+                              src={data.photos.find((p) => p.assetNo === u.assetNo)?.imageUrl}
+                              alt={`${u.assetNo}번 물품`}
+                              w="100%"
+                              h="100%"
+                              objectFit="cover"
+                            />
+                          ) : (
+                            <Text color="gray.500" fontSize="sm">
+                              {u.assetNo}번
+                            </Text>
+                          )}
+                        </Box>
+                        <Text
+                          fontSize="sm"
+                          fontWeight="semibold"
+                          color={active ? 'pink.500' : 'gray.800'}
+                        >
+                          {u.assetNo}번
+                        </Text>
+                        <Badge colorScheme="green" size="sm">
+                          대여가능
+                        </Badge>
+                      </VStack>
+                    );
+                  })}
+                </SimpleGrid>
+
+                {/* 페이지 이동 (대여 가능한 것이 6개 이상일 때만 표시) */}
+                {totalPages > 1 && (
+                  <HStack justify="space-between" mt={2}>
+                    <Button
+                      variant="outline"
+                      disabled={page === 0}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
                     >
-                      <Text color="gray.500">사진</Text>
-                    </Box>
-                    <Text
-                      fontSize="sm"
-                      fontWeight="semibold"
-                      color={active ? 'pink.500' : 'gray.800'}
-                    >
-                      {u.assetNo}번
+                      이전
+                    </Button>
+                    <Text fontSize="sm" color="gray.600">
+                      {page + 1} / {totalPages}
                     </Text>
-                  </VStack>
-                );
-              })}
-            </SimpleGrid>
-
-            {/* 페이지 이동 */}
-            <HStack justify="space-between" mt={2}>
-              <Button
-                variant="outline"
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-              >
-                이전
-              </Button>
-              <Button
-                variant="outline"
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              >
-                다음
-              </Button>
-            </HStack>
+                    <Button
+                      variant="outline"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    >
+                      다음
+                    </Button>
+                  </HStack>
+                )}
+              </>
+            )}
 
             {/* 하단 선택완료 버튼 */}
             <Box position="sticky" bottom={0} bg="white" pt={2} pb={4}>
@@ -333,7 +430,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
                   flex="2"
                   colorScheme="blue"
                   onClick={confirmSelect}
-                  disabled={!pendingSelectedUnitId} // ✅ 임시 선택 없으면 비활성
+                  disabled={!pendingSelectedUnitId}
                 >
                   선택완료
                 </Button>
@@ -345,8 +442,8 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
       {/* 하단 대여 버튼 */}
       <Box position="sticky" bottom={0}>
-        <Button w="full" onClick={rent} loading={renting} disabled={!canRent}>
-          {canRent ? '대여하기' : '대여 불가'}
+        <Button w="full" onClick={rent} loading={renting} disabled={!canRent} colorScheme="blue">
+          {renting ? '홀딩 중...' : canRent ? '대여하기 (30분 홀딩)' : '대여 불가'}
         </Button>
       </Box>
     </Box>
