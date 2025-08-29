@@ -9,7 +9,11 @@ const config = defineConfig({
     },
     tokens: {
       colors: {
+        new_purple: {
+          500: { value: '#DACEF3' },
+        },
         new_white: {
+          400: { value: '#f5f5f5' },
           500: { value: '#fafaf8' },
         },
         accent: {

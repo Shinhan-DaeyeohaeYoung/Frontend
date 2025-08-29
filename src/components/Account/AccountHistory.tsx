@@ -67,7 +67,7 @@ const HistoryRow: React.FC<{
     <HStack
       align="flex-start"
       gap={4}
-      py={2}
+      py={4}
       cursor={onClick ? 'pointer' : 'default'}
       onClick={() => onClick?.(item)}
       _hover={
@@ -101,7 +101,14 @@ export const AccountHistory: React.FC<AccountHistoryProps> = ({
   ...rest
 }) => {
   return (
-    <Box bg="white" border="1px solid" borderColor="gray.200" rounded="xl" p={4} w="100%" {...rest}>
+    <Box
+      // bg="white" border="1px solid" borderColor="gray.200"
+      // rounded="xl"
+      px={4}
+      py={4}
+      w="100%"
+      {...rest}
+    >
       {sectionLabel && (
         <Tag.Root size="md" variant="subtle" rounded="md" mb={3} px={3} py={1.5} bg="gray.100">
           {sectionLabel}

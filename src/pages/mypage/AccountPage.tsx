@@ -4,6 +4,8 @@ import AccountHistory, { type AccountTransaction } from '@/components/Account/Ac
 import { PageHeader } from '@/components/PageHeader';
 import sinhan from '@/assets/imgs/shinhan_logo.png';
 import { getRequest } from '@/api/requests';
+import logo_02 from '@/assets/imgs/logo_02.png';
+import { Tag } from '@/components/Tag';
 
 // ====== API 타입 ======
 type DepositEventStatusKo = '예치' | '환불' | '몰수';
@@ -51,7 +53,6 @@ function signedAmountByStatus(evt: DepositEvent): number {
 }
 const currencyKRW = (n: number) =>
   new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
     currency: 'KRW',
     maximumFractionDigits: 0,
   }).format(n);
@@ -72,6 +73,57 @@ const AccountPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const res = await getRequest<DepositEvent[]>(EVENTS_ENDPOINT);
+      // setEvents([
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      //   {
+      //     id: 0,
+      //     amount: 0,
+      //     status: 'string',
+      //     created_updated_at: '2025-08-29T13:23:38.520Z',
+      //     organization_name: 'string',
+      //   },
+      // ]);
       setEvents(Array.isArray(res) ? res : []);
     } catch (e: any) {
       setError(e?.message ?? '계좌 내역을 불러오는 중 오류가 발생했습니다.');
@@ -135,12 +187,20 @@ const AccountPage: React.FC = () => {
 
   return (
     <Box position="relative">
-      <PageHeader title="계좌 이체내역" subtitle="지금까지의 보증금 내역을 확인해보세요" />
-
-      <Stack p={4} gap={4}>
-        {/* 계좌 정보 박스: 내 첫번째/primary 계좌 노출 */}
+      <PageHeader
+        title="계좌 이체내역"
+        subtitle="지금까지의 보증금 내역을 확인해보세요!
+        최근 내역부터 과거 내역까지 모두 조회할 수 있어요"
+        bgColor="new_purple.500"
+        imageSrc={logo_02}
+        imageSize={40}
+      />
+      <Box px={6}>
+        <Text textAlign={'left'} pt={6} pb={4} fontWeight={'500'}>
+          My 보증금 계좌
+        </Text>
         <Flex
-          bg="gray.100"
+          bg="new_white.500"
           border="1px solid"
           borderColor="gray.200"
           rounded="xl"
@@ -157,14 +217,14 @@ const AccountPage: React.FC = () => {
               {myAccount ? myAccount.accountNoMasked : '계좌번호 없음'}
             </Text>
             {myAccount?.primary && (
-              <Text fontSize="xs" color="blue.600" mb={2}>
+              <Tag fontSize="xs" color="blue.600" mb={2} label="기본 계좌">
                 기본 계좌
-              </Text>
+              </Tag>
             )}
           </Flex>
           <Box>
             <Text fontSize="2xl" fontWeight="bold" textAlign="right">
-              {currencyKRW(currentBalance)}
+              {currencyKRW(currentBalance)}원
             </Text>
           </Box>
           {accError && (
@@ -173,29 +233,37 @@ const AccountPage: React.FC = () => {
             </Text>
           )}
         </Flex>
-
+      </Box>
+      <Stack p={4} gap={4}>
+        {/* 계좌 정보 박스: 내 첫번째/primary 계좌 노출 */}
         {/* 상태 표시 */}
-        {loading && (
+        {/* {loading && (
           <Text color="gray.600" fontSize="sm">
             불러오는 중…
           </Text>
-        )}
+        )} */}
         {error && (
           <Text color="red.500" fontSize="sm">
             {error}
           </Text>
         )}
-        {!loading && !error && transactions.length === 0 && (
-          <Text color="gray.500" fontSize="sm">
-            거래 내역이 없습니다.
-          </Text>
-        )}
-
-        {/* 거래 내역 리스트 */}
-        {!loading && !error && transactions.length > 0 && (
-          <AccountHistory items={transactions} onItemClick={handleTransactionClick} showDividers />
-        )}
       </Stack>
+      <Box h="1px" bgColor={'gray.200'}></Box>
+      {/* 거래 내역 리스트 */}
+
+      <Text textAlign={'left'} pt={6} pb={4} px={6} fontWeight={'500'}>
+        최근 거래 내역
+      </Text>
+      {!loading && !error && transactions.length === 0 && (
+        <Text color="gray.500" fontSize="sm">
+          거래 내역이 없습니다.
+        </Text>
+      )}
+      {!loading && !error && transactions.length > 0 && (
+        <Box>
+          <AccountHistory items={transactions} onItemClick={handleTransactionClick} showDividers />
+        </Box>
+      )}
     </Box>
   );
 };
