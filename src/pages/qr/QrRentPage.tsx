@@ -1,4 +1,4 @@
-import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
+import { Box, Text, VStack, Flex, Image, Container, Badge } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
 import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
 import { useEffect, useState } from 'react';
@@ -7,7 +7,17 @@ import { SearchInput } from '@/components/Input';
 import { useModalStore } from '@/stores/modalStore';
 import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
+
+// QR 토큰 검증 응답 타입
+interface QRTokenResponse {
+  type: string;
+  universityId: number;
+  organizationId: number;
+  issuedAt: string;
+  expiresAt: string;
+}
 
 //   availableQuantity < totalQuantity면 대여가능
 // countWaitList < totalQuantity면 대기열 가능
@@ -36,50 +46,64 @@ export interface Item {
 
 export default function QrRentPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuthStore();
+  const { openModal, closeModal } = useModalStore();
+
+  // URL에서 토큰 추출
+  const token = searchParams.get('token');
+
+  // QR 토큰 검증 결과 상태
+  const [qrTokenData, setQrTokenData] = useState<QRTokenResponse | null>(null);
+  const [isTokenValid, setIsTokenValid] = useState<boolean>(false);
+  const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
+  const [tokenError, setTokenError] = useState<string>('');
+
+  // QR 토큰 검증 함수
+  const validateQRToken = async (token: string) => {
+    try {
+      setIsLoadingToken(true);
+      setTokenError('');
+
+      const response = await postRequest<QRTokenResponse>('/api/qrs/resolve', {
+        token: token,
+      });
+
+      if (response) {
+        setQrTokenData(response);
+        setIsTokenValid(true);
+        console.log('QR 토큰 검증 성공:', response);
+      }
+    } catch (error: any) {
+      console.error('QR 토큰 검증 실패:', error);
+      setIsTokenValid(false);
+
+      if (error.response?.status === 400) {
+        setTokenError('토큰이 누락되었거나 형식이 잘못되었습니다.');
+      } else if (error.response?.status === 401) {
+        setTokenError('토큰이 만료되었거나 유효하지 않습니다.');
+      } else {
+        setTokenError('토큰 검증 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsLoadingToken(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 토큰 검증
+  useEffect(() => {
+    if (token) {
+      validateQRToken(token);
+    } else {
+      setTokenError('QR 토큰이 없습니다.');
+    }
+  }, [token]);
 
   const dummyContent =
     "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
-  // const response = {
-  //   content: [
-  // {
-  //   id: 1,
-  //   universityId: 1,
-  //   organizationId: 2,
-  //   name: '충전기',
-  //   totalQuantity: 2,
-  //   availableQuantity: 2,
-  //   isActive: true,
-  //   coverKey: 'univ/1/items/1/units/501.jpg',
-  // },
-  //     {
-  //       id: 1,
-  //       universityId: 1,
-  //       organizationId: 2,
-  //       name: '충전기',
-  //       totalQuantity: 2,
-  //       availableQuantity: 2,
-  //       isActive: true,
-  //       coverKey: 'univ/1/items/1/units/501.jpg',
-  //     },
-  //     {
-  //       id: 1,
-  //       universityId: 1,
-  //       organizationId: 2,
-  //       name: '충전기',
-  //       totalQuantity: 2,
-  //       availableQuantity: 2,
-  //       isActive: true,
-  //       coverKey: 'univ/1/items/1/units/501.jpg',
-  //     },
-  //   ],
-  //   page: 0,
-  //   size: 20,
-  //   totalElements: 1,
-  // };
 
   const [query, setQuery] = useState('');
   const [lastSearched, setLastSearched] = useState('');
-  const { openModal, closeModal } = useModalStore();
 
   const handleSearch = () => {
     // 이 자리에서 API 호출 또는 필터링 로직 실행
@@ -131,61 +155,73 @@ export default function QrRentPage() {
       ),
     });
   };
-  const fetchListData = async () => {
-    // [todo] api 수정GET/api/rental-requests/{organizationId}/holding
-    // 내 홀딩 예약 중 특정 조직의 것만
-    const organizationId = 2; // [todo]: parameter로 수정
-    const res = await getRequest<ApiResponse<Item>>(
-      `http://43.200.61.108:8082/api/rental-requests/${organizationId}/holding`
-    );
-    // setData(res?.content);
-    const dummyContent = [
-      {
-        id: 0,
-        itemId: 0,
-        unitId: 0,
-        status: 'string',
-        reservedAt: 'string',
-        reserveExpiresAt: 'string',
-      },
-    ];
-    setData(dummyContent);
 
-    if (dummyContent.length == 0) {
-      // if (res?.content.length == 0) {
-      openModal({
-        title: '대여할 수 있는 물품이 없어요',
-        caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
-        body: (
-          <Button
-            w="full"
-            onClick={() => {
-              navigate('/rent');
-            }}
-            label="홈으로 가기"
-          ></Button>
-        ),
-      });
-      //   const handleOpenBookModal = (item: Item) => {
-      //     openModal({
-      //       title: '물품을 예약할까요?',
-      //       caption: '물품을 대여할 수 있게 되면 자동으로 홀딩됩니다!',
-      //       footer: (
-      //         <Button
-      //           w="full"
-      //           onClick={() => {
-      //             handleBook(item.id);
-      //           }}
-      //           label="예약하기"
-      //         ></Button>
-      //       ),
-      //     });
-      //   };
-    } else {
-      // [todo] 한 개일 때 분기처리
+  const fetchListData = async () => {
+    try {
+      // authStore에서 organizationId 가져오기
+      let currentOrganizationId: number | undefined;
+
+      if (user?.admin === 'university') {
+        currentOrganizationId = user.organizationInfo?.university?.id;
+      } else if (user?.admin === 'college') {
+        currentOrganizationId = user.organizationInfo?.college?.id;
+      } else if (user?.admin === 'department') {
+        currentOrganizationId = user.organizationInfo?.department?.id;
+      }
+
+      if (!currentOrganizationId) {
+        console.error('조직 ID를 찾을 수 없습니다.');
+        return;
+      }
+
+      // [todo] api 수정GET/api/rental-requests/{organizationId}/holding
+      // 내 홀딩 예약 중 특정 조직의 것만
+      const res = await getRequest<ApiResponse<Item>>(
+        `http://43.200.61.108:8082/api/rental-requests/${currentOrganizationId}/holding`
+      );
+
+      // setData(res?.content);
+      const dummyContent: Item[] = [
+        {
+          id: 0,
+          universityId: 1,
+          organizationId: currentOrganizationId,
+          name: '테스트 물품',
+          totalQuantity: 1,
+          availableQuantity: 1,
+          isActive: true,
+          coverKey: 'test-image.jpg',
+          description: '테스트용 더미 데이터입니다.',
+          countWaitList: 0,
+        },
+      ];
+      setData(dummyContent);
+
+      if (dummyContent.length == 0) {
+        // if (res?.content.length == 0) {
+        openModal({
+          title: '대여할 수 있는 물품이 없어요',
+          caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
+          body: (
+            <Button
+              w="full"
+              onClick={() => {
+                navigate('/rent');
+              }}
+              label="홈으로 가기"
+            ></Button>
+          ),
+        });
+      } else {
+        // [todo] 한 개일 때 분기처리
+        console.log('데이터가 있습니다:', dummyContent.length);
+      }
+      console.log(res);
+    } catch (error) {
+      console.error('데이터 가져오기 실패:', error);
     }
-    console.log(res);
   };
+
   const handleBook = (itemId: number) => {
     // api 요청
     try {
@@ -206,6 +242,99 @@ export default function QrRentPage() {
     } catch {}
   }, [selectedValue]);
 
+  // QR 토큰 정보 표시 컴포넌트
+  const renderQRTokenInfo = () => {
+    if (isLoadingToken) {
+      return (
+        <Box bg="blue.50" p={4} borderRadius="md" mb={4}>
+          <Text color="blue.600" fontWeight="bold">
+            🔍 QR 토큰 검증 중...
+          </Text>
+        </Box>
+      );
+    }
+
+    if (tokenError) {
+      return (
+        <Box bg="red.50" p={4} borderRadius="md" mb={4}>
+          <Text color="red.600" fontWeight="bold">
+            ❌ 오류: {tokenError}
+          </Text>
+        </Box>
+      );
+    }
+
+    if (qrTokenData && isTokenValid) {
+      return (
+        <Box
+          bg="green.50"
+          p={6}
+          borderRadius="xl"
+          mb={6}
+          border="2px solid"
+          borderColor="green.200"
+        >
+          <VStack gap={4} align="stretch">
+            <Text fontSize="xl" fontWeight="bold" color="green.700" textAlign="center">
+              ✅ QR 토큰 검증 성공!
+            </Text>
+
+            <Box bg="white" p={4} borderRadius="md">
+              <VStack gap={3} align="stretch">
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    토큰 타입:
+                  </Text>
+                  <Badge colorScheme="blue" fontSize="sm">
+                    {qrTokenData.type}
+                  </Badge>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    대학교 ID:
+                  </Text>
+                  <Text color="gray.600">{qrTokenData.universityId}</Text>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    조직 ID:
+                  </Text>
+                  <Text color="gray.600">{qrTokenData.organizationId}</Text>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    발급 시간:
+                  </Text>
+                  <Text color="gray.600" fontSize="sm">
+                    {new Date(qrTokenData.issuedAt).toLocaleString('ko-KR')}
+                  </Text>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    만료 시간:
+                  </Text>
+                  <Text color="gray.600" fontSize="sm">
+                    {new Date(qrTokenData.expiresAt).toLocaleString('ko-KR')}
+                  </Text>
+                </Flex>
+              </VStack>
+            </Box>
+
+            <Text fontSize="sm" color="green.600" textAlign="center">
+              🎯 이제 대여할 물품을 선택해주세요!
+            </Text>
+          </VStack>
+        </Box>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <Box px={10}>
       <PageHeader
@@ -215,6 +344,9 @@ export default function QrRentPage() {
         title={'대여해요'}
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>
+
+      {/* QR 토큰 정보 표시 */}
+      {renderQRTokenInfo()}
 
       <VStack gap={2} align="stretch" mt={2}>
         {data.map((el) => {

@@ -1,4 +1,4 @@
-import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
+import { Box, Text, VStack, Flex, Image, Badge } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
 import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
 import { useEffect, useState } from 'react';
@@ -7,9 +7,18 @@ import { SearchInput } from '@/components/Input';
 import { useModalStore } from '@/stores/modalStore';
 import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ReturnModal } from './components/ReturnModal';
 import { useAuthStore } from '@/stores/authStore';
+
+// QR 토큰 검증 응답 타입
+interface QRTokenResponse {
+  type: string;
+  universityId: number;
+  organizationId: number;
+  issuedAt: string;
+  expiresAt: string;
+}
 
 //   availableQuantity < totalQuantity면 대여가능
 // countWaitList < totalQuantity면 대기열 가능
@@ -39,8 +48,57 @@ export interface Item {
 export default function QrReturnPage() {
   const navigate = useNavigate();
   const { openModal, closeModal } = useModalStore();
-
   const { user } = useAuthStore();
+  const [searchParams] = useSearchParams();
+
+  // URL에서 토큰 추출
+  const token = searchParams.get('token');
+
+  // QR 토큰 검증 결과 상태
+  const [qrTokenData, setQrTokenData] = useState<QRTokenResponse | null>(null);
+  const [isTokenValid, setIsTokenValid] = useState<boolean>(false);
+  const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
+  const [tokenError, setTokenError] = useState<string>('');
+
+  // QR 토큰 검증 함수
+  const validateQRToken = async (token: string) => {
+    try {
+      setIsLoadingToken(true);
+      setTokenError('');
+
+      const response = await postRequest<QRTokenResponse>('/api/qrs/resolve', {
+        token: token,
+      });
+
+      if (response) {
+        setQrTokenData(response);
+        setIsTokenValid(true);
+        console.log('QR 토큰 검증 성공:', response);
+      }
+    } catch (error: any) {
+      console.error('QR 토큰 검증 실패:', error);
+      setIsTokenValid(false);
+
+      if (error.response?.status === 400) {
+        setTokenError('토큰이 누락되었거나 형식이 잘못되었습니다.');
+      } else if (error.response?.status === 401) {
+        setTokenError('토큰이 만료되었거나 유효하지 않습니다.');
+      } else {
+        setTokenError('토큰 검증 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsLoadingToken(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 토큰 검증
+  useEffect(() => {
+    if (token) {
+      validateQRToken(token);
+    } else {
+      setTokenError('QR 토큰이 없습니다.');
+    }
+  }, [token]);
 
   const [data, setData] = useState<Item[]>([]);
 
@@ -134,26 +192,12 @@ export default function QrReturnPage() {
           ></Button>
         ),
       });
-      //   const handleOpenBookModal = (item: Item) => {
-      //     openModal({
-      //       title: '물품을 예약할까요?',
-      //       caption: '물품을 대여할 수 있게 되면 자동으로 홀딩됩니다!',
-      //       footer: (
-      //         <Button
-      //           w="full"
-      //           onClick={() => {
-      //             handleBook(item.id);
-      //           }}
-      //           label="예약하기"
-      //         ></Button>
-      //       ),
-      //     });
-      //   };
     } else {
       // [todo] 한 개일 때 분기처리
     }
     console.log(res);
   };
+
   const handleBook = (itemId: number) => {
     // api 요청
     try {
@@ -174,6 +218,99 @@ export default function QrReturnPage() {
     } catch {}
   }, [selectedValue]);
 
+  // QR 토큰 정보 표시 컴포넌트
+  const renderQRTokenInfo = () => {
+    if (isLoadingToken) {
+      return (
+        <Box bg="blue.50" p={4} borderRadius="md" mb={4}>
+          <Text color="blue.600" fontWeight="bold">
+            🔍 QR 토큰 검증 중...
+          </Text>
+        </Box>
+      );
+    }
+
+    if (tokenError) {
+      return (
+        <Box bg="red.50" p={4} borderRadius="md" mb={4}>
+          <Text color="red.600" fontWeight="bold">
+            ❌ 오류: {tokenError}
+          </Text>
+        </Box>
+      );
+    }
+
+    if (qrTokenData && isTokenValid) {
+      return (
+        <Box
+          bg="green.50"
+          p={6}
+          borderRadius="xl"
+          mb={6}
+          border="2px solid"
+          borderColor="green.200"
+        >
+          <VStack gap={4} align="stretch">
+            <Text fontSize="xl" fontWeight="bold" color="green.700" textAlign="center">
+              ✅ QR 토큰 검증 성공!
+            </Text>
+
+            <Box bg="white" p={4} borderRadius="md">
+              <VStack gap={3} align="stretch">
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    토큰 타입:
+                  </Text>
+                  <Badge colorScheme="blue" fontSize="sm">
+                    {qrTokenData.type}
+                  </Badge>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    대학교 ID:
+                  </Text>
+                  <Text color="gray.600">{qrTokenData.universityId}</Text>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    조직 ID:
+                  </Text>
+                  <Text color="gray.600">{qrTokenData.organizationId}</Text>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    발급 시간:
+                  </Text>
+                  <Text color="gray.600" fontSize="sm">
+                    {new Date(qrTokenData.issuedAt).toLocaleString('ko-KR')}
+                  </Text>
+                </Flex>
+
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="bold" color="gray.700">
+                    만료 시간:
+                  </Text>
+                  <Text color="gray.600" fontSize="sm">
+                    {new Date(qrTokenData.expiresAt).toLocaleString('ko-KR')}
+                  </Text>
+                </Flex>
+              </VStack>
+            </Box>
+
+            <Text fontSize="sm" color="green.600" textAlign="center">
+              🎯 이제 반납할 물품을 선택해주세요!
+            </Text>
+          </VStack>
+        </Box>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <Box px={10}>
       <PageHeader
@@ -183,6 +320,9 @@ export default function QrReturnPage() {
         title={'반납하기'}
         subtitle={'사무실에서 대여한 물품 중 반납하려는 물품을 선택해주세요!'}
       ></PageHeader>
+
+      {/* QR 토큰 정보 표시 */}
+      {renderQRTokenInfo()}
 
       <VStack gap={2} align="stretch" mt={2}>
         {data.map((el) => {

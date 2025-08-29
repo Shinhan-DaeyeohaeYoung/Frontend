@@ -3,7 +3,9 @@ import { Box, VStack, Container, Text } from '@chakra-ui/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/Button';
 import { PageHeader } from '@/components/PageHeader';
+import Modal from '@/components/Modal';
 import { getRequest } from '@/api/requests';
+import { useAuthStore } from '@/stores/authStore';
 
 type PageState = 'main' | 'rental' | 'return';
 
@@ -17,10 +19,12 @@ interface QRMetaResponse {
 }
 
 export default function AdminQrPage() {
+  const { user, universityId } = useAuthStore();
   const [currentPage, setCurrentPage] = useState<PageState>('main');
   const [countdown, setCountdown] = useState<number>(0);
   const [qrData, setQrData] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   // 카운트다운 로직
   useEffect(() => {
@@ -28,7 +32,8 @@ export default function AdminQrPage() {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else if (countdown === 0 && currentPage !== 'main') {
-      // 카운트다운이 끝나면 메인 페이지로 돌아감
+      // 카운트다운이 끝나면 모달 닫기
+      setIsModalOpen(false);
       setCurrentPage('main');
     }
   }, [countdown, currentPage]);
@@ -37,10 +42,29 @@ export default function AdminQrPage() {
   const fetchQRMeta = async (type: 'RENT' | 'RETURN') => {
     try {
       setIsLoading(true);
+
+      // authStore에서 universityId와 organizationId 가져오기
+      const currentUniversityId = universityId || user?.universityId;
+
+      // admin 값에 따라 해당하는 organizationInfo 가져오기
+      let currentOrganizationId: number | undefined;
+
+      if (user?.admin === 'university') {
+        currentOrganizationId = user.organizationInfo?.university?.id;
+      } else if (user?.admin === 'college') {
+        currentOrganizationId = user.organizationInfo?.college?.id;
+      } else if (user?.admin === 'department') {
+        currentOrganizationId = user.organizationInfo?.department?.id;
+      }
+
+      if (!currentUniversityId || !currentOrganizationId) {
+        throw new Error('대학교 ID 또는 조직 ID를 찾을 수 없습니다.');
+      }
+
       const response = await getRequest<QRMetaResponse>('/api/admin/org-qr/meta', {
         params: {
-          universityId: 1, // 실제로는 authStore에서 가져와야 함
-          organizationId: 2, // 실제로는 authStore에서 가져와야 함
+          universityId: currentUniversityId,
+          organizationId: currentOrganizationId,
           type: 'SITE',
           page: 0,
           size: 20,
@@ -69,12 +93,14 @@ export default function AdminQrPage() {
     setCurrentPage('rental');
     setCountdown(50);
     await fetchQRMeta('RENT');
+    setIsModalOpen(true);
   };
 
   const handleReturnClick = async () => {
     setCurrentPage('return');
     setCountdown(50);
     await fetchQRMeta('RETURN');
+    setIsModalOpen(true);
   };
 
   const handleRefreshQR = async () => {
@@ -88,6 +114,14 @@ export default function AdminQrPage() {
   };
 
   const getPageTitle = () => {
+    return 'QR 페이지';
+  };
+
+  const getPageSubtitle = () => {
+    return '대여관련 설명\n대여하기 버튼을\n누른 뒤에\nQR 찍어주세요';
+  };
+
+  const getModalTitle = () => {
     switch (currentPage) {
       case 'rental':
         return '대여하기';
@@ -98,76 +132,68 @@ export default function AdminQrPage() {
     }
   };
 
-  const getPageSubtitle = () => {
-    switch (currentPage) {
-      case 'rental':
-      case 'return':
-        return undefined;
-      default:
-        return '대여관련 설명\n대여하기 버튼을\n누른 뒤에\nQR 찍어주세요';
-    }
+  const renderMainContent = () => {
+    return (
+      <VStack gap={4} w="full">
+        <Button
+          label="대여하기(QR 띄우기)"
+          size="lg"
+          w="full"
+          bg="#ff4d8d"
+          color="white"
+          _hover={{ bg: '#e63d7a' }}
+          borderRadius="xl"
+          py={6}
+          onClick={handleRentalClick}
+          disabled={isLoading}
+        />
+
+        <Button
+          label="반납하기(QR 띄우기)"
+          size="lg"
+          w="full"
+          bg="gray.100"
+          color="gray.600"
+          _hover={{ bg: 'gray.200' }}
+          borderRadius="xl"
+          py={6}
+          onClick={handleReturnClick}
+          disabled={isLoading}
+        />
+      </VStack>
+    );
   };
 
-  const renderMainContent = () => {
-    if (currentPage === 'main') {
-      return (
-        <VStack gap={4} w="full">
-          <Button
-            label="대여하기(QR 띄우기)"
-            size="lg"
-            w="full"
-            bg="#ff4d8d"
-            color="white"
-            _hover={{ bg: '#e63d7a' }}
-            borderRadius="xl"
-            py={6}
-            onClick={handleRentalClick}
-            disabled={isLoading}
-          />
-
-          <Button
-            label="반납하기(QR 띄우기)"
-            size="lg"
-            w="full"
-            bg="gray.100"
-            color="gray.600"
-            _hover={{ bg: 'gray.200' }}
-            borderRadius="xl"
-            py={6}
-            onClick={handleReturnClick}
-            disabled={isLoading}
-          />
-        </VStack>
-      );
-    }
-
-    // QR 화면 (대여하기 또는 반납하기)
+  const renderQRModalContent = () => {
     return (
-      <VStack gap={6} w="full">
+      <VStack gap={8} w="full" h="full" justify="center">
         {/* QR 코드 영역 */}
         <Box
           bg="white"
-          p={8}
+          p={10}
           borderRadius="2xl"
-          w="300px"
-          h="300px"
+          w="400px"
+          h="400px"
           display="flex"
           alignItems="center"
           justifyContent="center"
-          border="2px solid"
+          border="3px solid"
           borderColor="gray.200"
+          mx="auto"
         >
           {/* 실제 QR 코드 표시 */}
           {isLoading ? (
-            <Text color="gray.500">QR 생성 중...</Text>
+            <Text color="gray.500" fontSize="lg">
+              QR 생성 중...
+            </Text>
           ) : (
-            <QRCodeSVG value={qrData} size={250} level="M" includeMargin={true} />
+            <QRCodeSVG value={qrData} size={350} level="M" includeMargin={true} />
           )}
         </Box>
 
         {/* 카운트다운 */}
-        <Text fontSize="xl" fontWeight="bold" color="gray.700">
-          {countdown}초 ~ 0초
+        <Text fontSize="3xl" fontWeight="bold" color="gray.700">
+          {countdown}초
         </Text>
 
         {/* QR 새로고침 버튼 */}
@@ -175,6 +201,7 @@ export default function AdminQrPage() {
           label="QR 새로고침"
           size="lg"
           w="full"
+          maxW="400px"
           bg="white"
           border="2px"
           borderColor="gray.300"
@@ -187,6 +214,20 @@ export default function AdminQrPage() {
           py={6}
           onClick={handleRefreshQR}
           disabled={isLoading}
+        />
+
+        {/* 닫기 버튼 */}
+        <Button
+          label="닫기"
+          size="lg"
+          w="full"
+          maxW="400px"
+          bg="gray.100"
+          color="gray.600"
+          _hover={{ bg: 'gray.200' }}
+          borderRadius="xl"
+          py={4}
+          onClick={() => setIsModalOpen(false)}
         />
       </VStack>
     );
@@ -211,6 +252,15 @@ export default function AdminQrPage() {
           </Box>
         </VStack>
       </Container>
+
+      {/* QR 풀스크린 모달 */}
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={getModalTitle()}
+        body={renderQRModalContent()}
+        fullscreen={true}
+      />
     </Box>
   );
 }
