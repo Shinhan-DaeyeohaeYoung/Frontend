@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Box, VStack, Container, Text } from '@chakra-ui/react';
-import { Button } from '@/components/Button'; // 경로는 프로젝트 구조에 맞게 조정
-import { PageHeader } from '@/components/PageHeader'; // 경로는 프로젝트 구조에 맞게 조정
+import { QRCodeSVG } from 'qrcode.react';
+import { Button } from '@/components/Button';
+import { PageHeader } from '@/components/PageHeader';
+import { getRequest } from '@/api/requests';
 
 type PageState = 'main' | 'rental' | 'return';
+
+interface QRMetaResponse {
+  token: string;
+  type: string;
+  universityId: number;
+  organizationId: number;
+  issuedAt: string;
+  expiresAt: string;
+}
 
 export default function AdminQrPage() {
   const [currentPage, setCurrentPage] = useState<PageState>('main');
   const [countdown, setCountdown] = useState<number>(0);
+  const [qrData, setQrData] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 카운트다운 로직
   useEffect(() => {
@@ -20,19 +33,58 @@ export default function AdminQrPage() {
     }
   }, [countdown, currentPage]);
 
-  const handleRentalClick = () => {
+  // QR 메타데이터 가져오기
+  const fetchQRMeta = async (type: 'RENT' | 'RETURN') => {
+    try {
+      setIsLoading(true);
+      const response = await getRequest<QRMetaResponse>('/api/admin/org-qr/meta', {
+        params: {
+          universityId: 1, // 실제로는 authStore에서 가져와야 함
+          organizationId: 2, // 실제로는 authStore에서 가져와야 함
+          type: 'SITE',
+          page: 0,
+          size: 20,
+        },
+      });
+
+      if (response) {
+        const baseUrl = window.location.origin;
+        const qrUrl =
+          type === 'RENT'
+            ? `${baseUrl}/qr/rent?token=${response.token}`
+            : `${baseUrl}/qr/return?token=${response.token}`;
+
+        setQrData(qrUrl);
+      }
+    } catch (error) {
+      console.error('QR 메타데이터 가져오기 실패:', error);
+      // 에러 시 기본 데이터로 폴백
+      setQrData(`fallback_${type}_${Date.now()}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRentalClick = async () => {
     setCurrentPage('rental');
     setCountdown(50);
+    await fetchQRMeta('RENT');
   };
 
-  const handleReturnClick = () => {
+  const handleReturnClick = async () => {
     setCurrentPage('return');
     setCountdown(50);
+    await fetchQRMeta('RETURN');
   };
 
-  const handleRefreshQR = () => {
-    // QR 새로고침 시 카운트다운을 다시 50초로 리셋
+  const handleRefreshQR = async () => {
+    // QR 새로고침 시 카운트다운을 다시 50초로 리셋하고 새로운 QR 데이터 생성
     setCountdown(50);
+    if (currentPage === 'rental') {
+      await fetchQRMeta('RENT');
+    } else if (currentPage === 'return') {
+      await fetchQRMeta('RETURN');
+    }
   };
 
   const getPageTitle = () => {
@@ -70,6 +122,7 @@ export default function AdminQrPage() {
             borderRadius="xl"
             py={6}
             onClick={handleRentalClick}
+            disabled={isLoading}
           />
 
           <Button
@@ -82,6 +135,7 @@ export default function AdminQrPage() {
             borderRadius="xl"
             py={6}
             onClick={handleReturnClick}
+            disabled={isLoading}
           />
         </VStack>
       );
@@ -103,30 +157,12 @@ export default function AdminQrPage() {
           border="2px solid"
           borderColor="gray.200"
         >
-          {/* 실제 QR 코드가 들어갈 자리 - 임시로 QR 패턴 표시 */}
-          <Box
-            w="250px"
-            h="250px"
-            bg="black"
-            backgroundImage={`
-              repeating-linear-gradient(
-                0deg,
-                black,
-                black 10px,
-                white 10px,
-                white 20px
-              ),
-              repeating-linear-gradient(
-                90deg,
-                black,
-                black 10px,
-                white 10px,
-                white 20px
-              )
-            `}
-            backgroundBlendMode="multiply"
-            borderRadius="lg"
-          />
+          {/* 실제 QR 코드 표시 */}
+          {isLoading ? (
+            <Text color="gray.500">QR 생성 중...</Text>
+          ) : (
+            <QRCodeSVG value={qrData} size={250} level="M" includeMargin={true} />
+          )}
         </Box>
 
         {/* 카운트다운 */}
@@ -150,6 +186,7 @@ export default function AdminQrPage() {
           borderRadius="xl"
           py={6}
           onClick={handleRefreshQR}
+          disabled={isLoading}
         />
       </VStack>
     );
