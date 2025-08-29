@@ -41,7 +41,7 @@ export default function AdminOverviewPage() {
     try {
       setLoading(true);
       const data: AdminItemsResponse = await getRequest<AdminItemsResponse>(
-        '/admin/items?page=0&size=20&sort=id,asc'
+        '/admin/items?page=0&size=20&sort=id,desc'
       );
       setItems(data.content);
     } catch (err) {
