@@ -30,6 +30,7 @@ export interface Item {
   coverKey: string;
   description: string;
   countWaitList: number;
+  isBooked: boolean; // 예약 상태 필드 추가
 }
 
 export default function RentPage() {
@@ -89,6 +90,35 @@ export default function RentPage() {
     }
   };
 
+  // 예약 취소 API 호출 함수 추가
+  const handleCancelReservation = async (itemId: number) => {
+    try {
+      // 올바른 API 엔드포인트 사용
+      const response = await postRequest(`/waitlists/items/${itemId}/cancel`);
+
+      console.log('대기열 취소 성공:', response);
+      alert('대기열이 취소되었습니다.');
+
+      // 목록 새로고침
+      fetchListData();
+    } catch (error: unknown) {
+      console.error('대기열 취소 실패:', error);
+
+      let errorMessage = '대기열 취소 중 오류가 발생했습니다.';
+
+      // 타입 단언으로 error 타입 지정
+      const axiosError = error as { response?: { status?: number } };
+
+      if (axiosError.response?.status === 403) {
+        errorMessage = '본인이 참여한 대기열이 아닙니다.';
+      } else if (axiosError.response?.status === 404) {
+        errorMessage = '대기열을 찾을 수 없습니다.';
+      }
+
+      alert(`대기열 취소 실패: ${errorMessage}`);
+    }
+  };
+
   useEffect(() => {
     // try-catch 제거 (fetchListData 내부에서 이미 처리)
     fetchListData();
@@ -107,7 +137,9 @@ export default function RentPage() {
       <VStack gap={2} align="stretch" mt={2}>
         {data.map((el) => {
           const canRent = el?.availableQuantity > 0; // 사용 가능한 수량이 1개 이상
-          const canBook = el?.availableQuantity === 0 && el?.countWaitList < el?.totalQuantity; // 대여 불가능하지만 대기열에 여유가 있을 때
+          const canBook = el?.availableQuantity === 0 && el?.totalQuantity - el?.countWaitList > 0; // 대여 불가능하지만 예약 가능한 수량이 있을 때
+          const isBooked = el?.isBooked; // 예약 상태 확인
+
           return (
             <Card
               image={<Image src={`${el?.coverKey}`} />}
@@ -119,23 +151,28 @@ export default function RentPage() {
                     {`${
                       canRent
                         ? `대여 가능: ${el?.availableQuantity}/${el?.totalQuantity}개`
-                        : `예약 가능: ${el?.countWaitList}/${el?.totalQuantity}개`
+                        : `예약 가능: ${el?.totalQuantity - el?.countWaitList}/${
+                            el?.totalQuantity
+                          }개`
                     }`}
                   </Text>
                   <Button
                     ml="auto"
                     size="sm"
-                    label={canRent ? `대여하기` : `예약하기`}
+                    label={isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
                     onClick={() => {
-                      if (canRent) {
-                        handleOpenItemModal(el); // 대여 모달 열기
+                      if (isBooked) {
+                        handleCancelReservation(el.id);
+                      } else if (canRent) {
+                        handleOpenItemModal(el);
                       } else if (canBook) {
-                        handleOpenBookModal(el); // 예약 모달 열기
+                        handleOpenBookModal(el);
                       }
                     }}
-                    disabled={!canRent && !canBook} // 둘 다 불가능하면 버튼 비활성화
+                    disabled={!canRent && !canBook && !isBooked}
+                    colorScheme={isBooked ? 'red' : 'blue'}
                   >
-                    {canRent ? '대여하기' : '예약하기'}
+                    {isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
                   </Button>
                 </Flex>
               }
