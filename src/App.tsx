@@ -1,6 +1,6 @@
 import { BrowserRouter as Router } from 'react-router-dom';
-import AppLayout from './components/Layout/AppLayout';
-import AppRoutes from './routes';
+import AppLayout from '@/components/Layout/AppLayout'; // ✅ @/ 경로 사용
+import AppRoutes from '@/routes';
 import './App.css';
 
 function App() {
