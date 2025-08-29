@@ -38,6 +38,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       <Stack gap={2} align={align === 'center' ? 'center' : 'flex-start'} textAlign={textAlign}>
         <Text
           fontSize="4xl"
+          fontFamily={'jalnan'}
           fontWeight="bold"
           color={titleColor}
           _dark={{ color: 'white' }}
