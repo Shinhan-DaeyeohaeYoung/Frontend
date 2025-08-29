@@ -1,12 +1,13 @@
 // src/pages/admin/AdminItemCreatePage.tsx
 import * as React from 'react';
-import { Box, VStack, Textarea, Input } from '@chakra-ui/react';
+import { Box, VStack, Textarea, Input, Text } from '@chakra-ui/react';
 import { Button } from '@/components/Button';
 import TextInput from '@/components/Input/TextInput';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useAuthStore } from '@/stores/authStore';
-import { postRequest } from '@/api/requests'; // 추가
+import { postRequest } from '@/api/requests';
+import logo_01 from '@/assets/imgs/logo_01.png';
 
 export default function ItemCreatePage() {
   const navigate = useNavigate();
@@ -62,79 +63,149 @@ export default function ItemCreatePage() {
   };
 
   return (
-    <Box w="full" maxW="520px" mx="auto">
+    <Box
+      w="full"
+      maxW="520px"
+      mx="auto"
+      minH="calc(100% - 52px - 20px)" // [todo]: 하단 픽셀 수정
+      display="flex"
+      flexDir="column"
+    >
       {/* 상단 헤더 (PageHeader + 오버레이 아이콘 버튼) */}
       <PageHeader
         title="물품 등록"
-        subtitle={'대여기간·보증금·설명을 입력하고'}
-        // bgColor 생략 시 기본 gray.50, 필요하면 bgColor="transparent"로 바꿔서 배경 없는 헤더로 사용 가능
+        subtitle={'보증금·대여기간·물품 설명을 설정하고\n안전하고 편리한 대여 환경을 만들어 보세요'}
+        imageSrc={logo_01}
+        imageSize={40}
       />
-
-      {/* 본문 폼 */}
       <VStack
         as="form"
         align="stretch"
-        gap={3}
+        gap={5}
         px={4}
         py={4}
+        flex="1"
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();
         }}
       >
+        {/* 카드 느낌의 섹션 래퍼 */}
+        {/* <Box bg="white" border="1px solid" borderColor="gray.200" rounded="xl" p={4}> */}
         {/* 물품 명 */}
-        <TextInput
-          placeholder="물품 명을 입력해주세요"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="semibold" mb={2} color="gray.800" textAlign="left">
+            물품 명
+          </Text>
+          <TextInput
+            placeholder="물품 명을 입력해주세요"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Box>
 
         {/* 최대 대여일 */}
-        <Input
-          type="number"
-          value={maxRentalDays}
-          onChange={(e) => setMaxRentalDays(e.target.value === '' ? '' : Number(e.target.value))}
-          min={1}
-          placeholder="최대 대여일을 입력해주세요 (일 기준)"
-          h="36px"
-          bg="white"
-          borderRadius="xl"
-          borderColor="gray.300"
-          _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
-        />
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="semibold" mb={2} color="gray.800" textAlign="left">
+            최대 대여일
+          </Text>
+          <Box position="relative">
+            <Input
+              type="number"
+              value={maxRentalDays}
+              onChange={(e) =>
+                setMaxRentalDays(e.target.value === '' ? '' : Number(e.target.value))
+              }
+              min={1}
+              placeholder="최대 대여일을 입력해주세요"
+              h="44px"
+              pr="52px" // 단위 배지 공간
+              textAlign="right" // 숫자 우측 정렬
+              bg="white"
+              borderRadius="xl"
+              borderColor="gray.300"
+              _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
+            />
+            {/* 단위 배지 */}
+            <Box
+              position="absolute"
+              right="8px"
+              top="50%"
+              transform="translateY(-50%)"
+              px="2"
+              py="1"
+              fontSize="xs"
+              color="gray.600"
+              bg="gray.100"
+              rounded="md"
+              pointerEvents="none"
+            >
+              일
+            </Box>
+          </Box>
+        </Box>
 
         {/* 보증금 */}
-        <Input
-          type="number"
-          value={deposit}
-          onChange={(e) => setDeposit(e.target.value === '' ? '' : Number(e.target.value))}
-          min={0}
-          step={1000}
-          placeholder="보증금을 입력해주세요"
-          h="36px"
-          bg="white"
-          borderRadius="xl"
-          borderColor="gray.300"
-          _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
-        />
+        <Box mb={4}>
+          <Text fontSize="sm" fontWeight="semibold" mb={2} color="gray.800" textAlign="left">
+            보증금
+          </Text>
+          <Box position="relative">
+            <Input
+              type="number"
+              value={deposit}
+              onChange={(e) => setDeposit(e.target.value === '' ? '' : Number(e.target.value))}
+              min={0}
+              step={1000}
+              placeholder="보증금을 입력해주세요"
+              h="44px"
+              pr="52px"
+              textAlign="right"
+              bg="white"
+              borderRadius="xl"
+              borderColor="gray.300"
+              _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
+            />
+            <Box
+              position="absolute"
+              right="8px"
+              top="50%"
+              transform="translateY(-50%)"
+              px="2"
+              py="1"
+              fontSize="xs"
+              color="gray.600"
+              bg="gray.100"
+              rounded="md"
+              pointerEvents="none"
+            >
+              원
+            </Box>
+          </Box>
+        </Box>
 
         {/* 설명 */}
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="물품에 대한 설명을 입력해주세요"
-          minH="120px"
-          bg="white"
-          borderRadius="xl"
-          borderColor="gray.300"
-          _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
-        />
-
-        {/* 활성 여부 필드 제거 - 무조건 true이므로 UI에서 보여줄 필요 없음 */}
-
-        {/* 제출 */}
-        <Button label="다음" onClick={handleSubmit} />
+        <Box>
+          <Text fontSize="sm" fontWeight="semibold" mb={2} color="gray.800" textAlign="left">
+            설명
+          </Text>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="물품에 대한 설명을 입력해주세요"
+            minH="160px"
+            bg="white"
+            borderRadius="xl"
+            borderColor="gray.300"
+            _focus={{ borderColor: 'blue.300', boxShadow: '0 0 0 1px #A4B8FB' }}
+          />
+        </Box>
+        {/* </Box> */}
       </VStack>
+      {/* 하단 버튼 */}
+      <Box px={4} pb={6}>
+        <Button w="full" label="다음" onClick={handleSubmit} />
+      </Box>
     </Box>
   );
 }

@@ -73,58 +73,58 @@ const AccountPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const res = await getRequest<DepositEvent[]>(EVENTS_ENDPOINT);
-      // setEvents([
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      // ]);
-      setEvents(Array.isArray(res) ? res : []);
+      setEvents([
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+        {
+          id: 0,
+          amount: 0,
+          status: 'string',
+          created_updated_at: '2025-08-29T13:23:38.520Z',
+          organization_name: 'string',
+        },
+      ]);
+      // setEvents(Array.isArray(res) ? res : []);
     } catch (e: any) {
       setError(e?.message ?? '계좌 내역을 불러오는 중 오류가 발생했습니다.');
       setEvents([]);

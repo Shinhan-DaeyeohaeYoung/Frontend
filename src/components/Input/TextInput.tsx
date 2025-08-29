@@ -12,15 +12,15 @@ const TextInput: React.FC<TextInputProps> = ({ value, onChange, placeholder, ...
       onChange={onChange}
       placeholder={placeholder}
       w="full"
-      h="36px"
+      h="40px"
       bg="white"
-      borderRadius="xl"
+      borderRadius="lg"
       borderColor="gray.300"
       textStyle="body_md"
       _placeholder={{ color: 'gray.400' }}
       _focus={{
         borderColor: 'blue.300',
-        boxShadow: '0 0 0 1px #A4B8FB',
+        // boxShadow: '0 0 0 1px #7A6FFB',
       }}
       {...rest}
     />
