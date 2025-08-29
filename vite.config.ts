@@ -30,6 +30,7 @@ export default defineConfig({
         devOptions: {
           enabled: true, // ✅ 개발 모드에서 PWA 테스트 가능
         },
+        manifestFilename: 'manifest.json', // ← 이 줄 추가!
         workbox: {
           // ❌ 문제가 있는 설정
           // globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
