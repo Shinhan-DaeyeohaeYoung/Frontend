@@ -13,6 +13,7 @@ export const Button: React.FC<AppButtonProps> = ({
   label,
   variant = 'default',
   size = 'lg',
+  children,
   ...rest
 }) => {
   if (variant === 'caption') {
@@ -28,7 +29,7 @@ export const Button: React.FC<AppButtonProps> = ({
         _hover={{ bg: 'gray.100' }}
         {...rest}
       >
-        {label}
+        {label} {children}
       </ChakraButton>
     );
   }
@@ -44,7 +45,7 @@ export const Button: React.FC<AppButtonProps> = ({
         _hover={{ bg: 'gray.200' }}
         {...rest}
       >
-        {label}
+        {label} {children}
       </ChakraButton>
     );
   }
@@ -59,7 +60,7 @@ export const Button: React.FC<AppButtonProps> = ({
       _hover={{ bg: 'gray.100' }}
       {...rest}
     >
-      {label}
+      {label} {children}
     </ChakraButton>
   );
 };
