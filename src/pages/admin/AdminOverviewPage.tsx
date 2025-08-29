@@ -6,8 +6,9 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { useNavigate } from 'react-router-dom';
 import { getRequest } from '@/api/requests';
+import logo_01 from '@/assets/imgs/logo_01.png';
 
-// API 응답에 맞는 타입 정의
+// API 응답에 맞는 타입 정의 (기존 유지)
 type AdminItem = {
   id: number;
   universityId: number;
@@ -35,15 +36,13 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // API 호출 함수
+  // ✅ API 요청 흐름은 수정하지 않음
   const fetchAdminItems = async () => {
     try {
       setLoading(true);
-
       const data: AdminItemsResponse = await getRequest<AdminItemsResponse>(
         '/admin/items?page=0&size=20&sort=id,asc'
       );
-
       setItems(data.content);
     } catch (err) {
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
@@ -56,108 +55,131 @@ export default function AdminOverviewPage() {
     fetchAdminItems();
   }, []);
 
-  // 상세보기 -> 라우팅
   const handleInfo = (id: number) => {
     navigate(`/admin/overview/${id}`);
   };
 
   if (loading) {
     return (
-      <Box px={10}>
+      <Box>
         <PageHeader
-          px={0}
-          py={10}
+          px={4}
+          pt={10}
+          py={16}
+          imageSrc={logo_01}
+          imageSize={40}
           title="물품 관리"
-          subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
+          subtitle={'등록된 물품들을 확인하고 관리할 수 있어요'}
         />
-        <Text>로딩 중...</Text>
+        {/* <Text px={6}>로딩 중...</Text> */}
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box px={10}>
+      <Box>
         <PageHeader
-          px={0}
-          py={10}
+          px={4}
+          pt={10}
+          py={16}
+          imageSrc={logo_01}
+          imageSize={40}
           title="물품 관리"
-          subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
+          subtitle={'등록된 물품들을 확인하고 관리할 수 있어요'}
         />
-        <Text color="red.500">오류: {error}</Text>
-        <Button label="다시 시도" onClick={fetchAdminItems} mt={4} />
+        <Text px={6} color="red.500">
+          오류: {error}
+        </Text>
+        <Box px={6} mt={4}>
+          <Button label="다시 시도" onClick={fetchAdminItems} />
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Box px={10}>
+    <Box>
+      {/* ✅ RentPage와 동일한 헤더 톤 */}
       <PageHeader
-        px={0}
-        py={10}
+        px={4}
+        pt={10}
+        py={16}
+        imageSrc={logo_01}
+        imageSize={40}
         title="물품 관리"
-        subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
+        subtitle={'등록된 물품들을 확인하고 관리할 수 있어요'}
       />
 
-      <Flex justify="space-between" mt={2} gap={2}>
+      {/* 상단 컨트롤 바: RentPage엔 없지만 유지해도 레이아웃에 영향 없음 */}
+      <Flex justify="space-between" mt={6} gap={2} px={4}>
         <Text fontSize="sm" color="gray.500">
           총 {items.length}개의 물품
         </Text>
         <Flex gap={2}>
-          <Button label="최신순 ^" variant="text" size="sm" />
+          {/* <Button label="최신순 ^" variant="text" size="sm" /> */}
           <Button label="물품 등록하기" size="sm" onClick={() => navigate('/admin/items/create')} />
         </Flex>
       </Flex>
 
-      <VStack gap={2} align="stretch" mt={2}>
-        {items.map((item) => (
-          <Card
-            key={item.id}
-            image={
-              item.coverKey ? (
-                <Image src={item.coverKey} alt={item.name} objectFit="cover" w="100%" h="200px" />
-              ) : (
-                <Box
-                  bg="gray.200"
-                  w="100%"
-                  h="200px"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text color="gray.500">이미지 없음</Text>
-                </Box>
-              )
-            }
-            title={item.name}
-            subtitle={item.description}
-            bottomExtra={
-              <Flex justify="space-between" w="100%" align="flex-end">
-                <Flex direction="column" gap={1}>
-                  <Text fontSize="sm" color="gray.500">
-                    총 수량: {item.totalQuantity}개
-                  </Text>
-                  <Text fontSize="sm" color="gray.500">
-                    대여 가능: {item.availableQuantity}개
-                  </Text>
-                  {item.countWaitList > 0 && (
-                    <Text fontSize="sm" color="orange.500">
-                      대기자: {item.countWaitList}명
+      {/* ✅ RentPage 스타일의 리스트: VStack + borderBottom */}
+      <VStack
+        gap={0}
+        align="stretch"
+        mt={4}
+        borderTop="1px solid"
+        borderBottom="1px solid"
+        borderColor="gray.200"
+        px={0}
+      >
+        {items.map((item) => {
+          const canRent = item.availableQuantity > 0;
+          const canBook = item.availableQuantity === 0 && item.countWaitList < item.totalQuantity;
+
+          return (
+            <Card
+              key={item.id}
+              image={
+                item.coverKey ? (
+                  <Image src={item.coverKey} alt={item.name} />
+                ) : (
+                  <Box
+                    bg="gray.200"
+                    w="100%"
+                    h="100%"
+                    minH="80px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Text color="gray.500" fontSize="sm">
+                      이미지 없음
                     </Text>
-                  )}
-                </Flex>
-                <Flex gap={2}>
+                  </Box>
+                )
+              }
+              title={item.name}
+              subtitle={item.description}
+              bottomExtra={
+                <Flex justify="space-between" width="100%" align="flex-end">
+                  <Text fontSize="xs" color="gray.500">
+                    {canRent
+                      ? `대여 가능: ${item.availableQuantity}/${item.totalQuantity}개`
+                      : `예약 가능: ${item.countWaitList}/${item.totalQuantity}개`}
+                  </Text>
+
+                  {/* 관리자 페이지에서는 '상세보기'로 이동 */}
                   <Button
+                    ml="auto"
                     size="sm"
                     label="상세보기"
-                    colorScheme="green"
                     onClick={() => handleInfo(item.id)}
                   />
                 </Flex>
-              </Flex>
-            }
-          />
-        ))}
+              }
+            />
+          );
+        })}
       </VStack>
     </Box>
   );

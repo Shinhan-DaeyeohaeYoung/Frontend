@@ -26,7 +26,7 @@ export const Button: React.FC<AppButtonProps> = ({
         py={1}
         borderColor="gray.300"
         colorPalette="accent"
-        _hover={{ bg: 'gray.100' }}
+        _hover={{ bg: 'accent.600' }}
         {...rest}
       >
         {label} {children}
@@ -42,7 +42,7 @@ export const Button: React.FC<AppButtonProps> = ({
         fontSize="sm"
         colorPalette="accent" // hover 색상용
         color="gray.600"
-        _hover={{ bg: 'gray.200' }}
+        _hover={{ bg: 'accent.600' }}
         {...rest}
       >
         {label} {children}
@@ -57,7 +57,7 @@ export const Button: React.FC<AppButtonProps> = ({
       variant="solid"
       // borderColor="gray.400"
       backgroundColor="accent.500"
-      _hover={{ bg: 'gray.100' }}
+      _hover={{ bg: 'accent.600' }}
       {...rest}
     >
       {label} {children}
