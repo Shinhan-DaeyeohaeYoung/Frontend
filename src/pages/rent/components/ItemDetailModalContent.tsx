@@ -10,12 +10,12 @@ import {
   AspectRatio,
   Image,
   SimpleGrid,
-  Button,
   Flex,
+  Button as ChakraButton,
 } from '@chakra-ui/react';
 // import StickyActionButton from './StickyActionButton' // 쓰는 중이면
 import { getRequest, postRequest } from '@/api/requests';
-
+import { Button } from '@/components/Button';
 // API 응답 타입 정의 수정 (any 타입 제거)
 interface ItemDetail {
   id: number;
@@ -238,13 +238,13 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
             {selectedUnit?.assetNo ? `${data.name}(물품 번호: ${selectedUnit.assetNo})` : data.name}
           </Text>
           {view === 'detail' ? (
-            <Button size="sm" variant="outline" onClick={enterSelectView}>
+            <ChakraButton size="sm" variant="outline" onClick={enterSelectView}>
               다른 물품 선택하기
-            </Button>
+            </ChakraButton>
           ) : (
-            <Button size="sm" variant="ghost" onClick={() => setView('detail')}>
+            <ChakraButton size="sm" variant="ghost" onClick={() => setView('detail')}>
               ← 상세보기
-            </Button>
+            </ChakraButton>
           )}
         </HStack>
       </Box>
@@ -442,7 +442,7 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
       {/* 하단 대여 버튼 */}
       <Box position="sticky" bottom={0}>
-        <Button w="full" onClick={rent} loading={renting} disabled={!canRent} colorScheme="blue">
+        <Button w="full" onClick={rent} loading={renting} disabled={!canRent}>
           {renting ? '홀딩 중...' : canRent ? '대여하기 (30분 홀딩)' : '대여 불가'}
         </Button>
       </Box>
