@@ -20,74 +20,22 @@ export default defineConfig({
     !isStorybook &&
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
         includeAssets: [
           'favicon.ico',
           'apple-touch-icon.png',
           'pwa-192x192.png',
           'pwa-512x512.png',
         ],
-        devOptions: {
-          enabled: true, // ✅ 개발 모드에서 PWA 테스트 가능
-        },
-        manifestFilename: 'manifest.json', // ← 이 줄 추가!
-        workbox: {
-          // ❌ 문제가 있는 설정
-          // globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-
-          // ✅ 수정된 설정
-          globPatterns: ['**/*.{js,css,html}'],
-          globDirectory: 'dist', // 빌드된 폴더 지정
-
-          // ✅ 오프라인 지원 설정
-          navigateFallback: '/index.html',
-          navigateFallbackAllowlist: [/^\/$/],
-
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif)$/,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'images',
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 30 * 24 * 60 * 60, // 30일
-                },
-              },
-            },
-            // ✅ API 요청 캐싱 추가
-            {
-              urlPattern: /^https:\/\/.*\/api\/.*/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'api-cache',
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 5 * 60, // 5분
-                },
-              },
-            },
-          ],
-        },
         manifest: {
-          name: '대여해Young', // ✅ 서비스 이름으로 변경
-          short_name: '대여해Young', // ✅ 짧은 이름도 동일하게
-          description: '대학생을 위한 물품 대여 서비스 PWA', // ✅ 설명도 서비스에 맞게 변경
+          name: '대여해Young',
+          short_name: '대여해Young',
+          description: '대학생을 위한 물품 대여 서비스',
           theme_color: '#6C67FF',
-          background_color: '#ffffff', // ✅ 배경색 추가
+          background_color: '#ffffff',
           display: 'standalone',
-          orientation: 'portrait', // ✅ 화면 방향 설정
-          start_url: '/',
-          scope: '/', // ✅ 범위 설정
           icons: [
             { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
             { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-            {
-              src: 'pwa-512x512-maskable.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable',
-            },
           ],
         },
       }),
