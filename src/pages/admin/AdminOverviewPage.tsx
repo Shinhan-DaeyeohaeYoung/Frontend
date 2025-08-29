@@ -73,7 +73,7 @@ export default function RentPage() {
 
       <Flex justify="flex-end" mt={2} gap={2}>
         <Button label="최신순 ^" variant="text" size="sm" />
-        <Button label="물품 등록하기" size="sm" />
+        <Button label="물품 등록하기" size="sm" onClick={() => navigate('/admin/items/create')} />
       </Flex>
 
       <VStack gap={2} align="stretch" mt={2}>
