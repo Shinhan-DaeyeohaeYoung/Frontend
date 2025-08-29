@@ -13,7 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { tokenStorage } from '../api/client';
 import { postRequest, getRequest } from '../api/requests'; // 요청 유틸 함수 import
-import { toaster } from '../components/UI/toaster';
+import { toaster } from '@/components/UI/toaster';
 import { useAuthStore } from '../stores/authStore';
 
 interface LoginResponse {
