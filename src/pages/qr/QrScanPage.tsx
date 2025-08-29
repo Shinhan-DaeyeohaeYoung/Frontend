@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Button, Flex, Heading, HStack, Stack, Text } from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
 import jsQR from 'jsqr';
 
 const QrScanPage: React.FC = () => {
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -61,11 +63,34 @@ const QrScanPage: React.FC = () => {
       setResult(code.data);
       stopCamera();
 
-      // 원하면 여기서 자동 이동:
-      // if (code.data.startsWith('http')) window.location.href = code.data
+      // QR 스캔 성공 시 바로 해당 링크로 이동
+      handleQRResult(code.data);
       return;
     }
     rafRef.current = requestAnimationFrame(scanFrame);
+  };
+
+  // QR 결과 처리 및 이동
+  const handleQRResult = (qrData: string) => {
+    try {
+      // URL인지 확인
+      if (qrData.startsWith('http://') || qrData.startsWith('https://')) {
+        // 외부 URL인 경우 새 탭에서 열기
+        window.open(qrData, '_blank');
+      } else if (qrData.startsWith('/')) {
+        // 내부 경로인 경우 React Router로 이동
+        navigate(qrData);
+      } else if (qrData.includes('localhost:5173')) {
+        // localhost URL인 경우 경로만 추출해서 이동
+        const url = new URL(qrData);
+        navigate(url.pathname + url.search);
+      } else {
+        // 일반 텍스트인 경우 콘솔에 출력
+        console.log('QR 스캔 결과:', qrData);
+      }
+    } catch (error) {
+      console.error('QR 결과 처리 중 오류:', error);
+    }
   };
 
   useEffect(() => () => stopCamera(), []);
@@ -137,12 +162,12 @@ const QrScanPage: React.FC = () => {
             <Button
               size="sm"
               onClick={startCamera}
-              isDisabled={isScanning}
+              disabled={isScanning}
               colorScheme={isScanning ? 'gray' : 'blue'}
             >
               {isScanning ? '스캐닝 중' : '카메라 시작'}
             </Button>
-            <Button size="sm" variant="outline" onClick={stopCamera} isDisabled={!isScanning}>
+            <Button size="sm" variant="outline" onClick={stopCamera} disabled={!isScanning}>
               중지
             </Button>
             <Button
@@ -175,6 +200,9 @@ const QrScanPage: React.FC = () => {
                 <Text fontSize="xs" wordBreak="break-all">
                   스캔 텍스트: {result}
                 </Text>
+                <Button size="sm" mt={2} onClick={() => handleQRResult(result)} colorScheme="blue">
+                  링크로 이동하기
+                </Button>
               </Box>
             )}
           </>

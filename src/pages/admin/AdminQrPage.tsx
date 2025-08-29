@@ -61,7 +61,7 @@ export default function AdminQrPage() {
         throw new Error('대학교 ID 또는 조직 ID를 찾을 수 없습니다.');
       }
 
-      const response = await getRequest<QRMetaResponse>('/api/admin/org-qr/meta', {
+      const response = await getRequest<QRMetaResponse>('/admin/org-qr/meta', {
         params: {
           universityId: currentUniversityId,
           organizationId: currentOrganizationId,

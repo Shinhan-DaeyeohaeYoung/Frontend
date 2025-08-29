@@ -66,7 +66,7 @@ export default function QrReturnPage() {
       setIsLoadingToken(true);
       setTokenError('');
 
-      const response = await postRequest<QRTokenResponse>('/api/qrs/resolve', {
+      const response = await postRequest<QRTokenResponse>('/qrs/resolve', {
         token: token,
       });
 
@@ -149,53 +149,96 @@ export default function QrReturnPage() {
   };
 
   const fetchListData = async () => {
-    // [todo] api 수정GET/api/rental-requests/{organizationId}/holding
-    // 내 홀딩 예약 중 특정 조직의 것만
-    const organizationId = 2; // [todo]: parameter로 수정
-    const res = await getRequest<ApiResponse<Item>>(
-      `http://43.200.61.108:8082/api/rental-requests/${organizationId}/holding`
-    );
-    // setData(res?.content);
-    const dummyContent = [
-      {
-        rentalId: 0,
-        unitId: 0,
-        assetNo: 'string',
-        unitStatus: 'string',
-        itemId: 0,
-        description: 'string',
-        universityId: 0,
-        organizationId: 0,
-        photos: [
-          {
-            assetNo: 'string',
-            key: 'string',
-            imageUrl: 'string',
-          },
-        ],
-      },
-    ];
-    setData(dummyContent);
+    try {
+      // authStore에서 organizationId 가져오기 - 모든 조직 확인
+      let currentOrganizationId: number | undefined;
 
-    if (dummyContent.length == 0) {
-      // if (res?.content.length == 0) {
-      openModal({
-        title: '대여할 수 있는 물품이 없어요',
-        caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
-        body: (
-          <Button
-            w="full"
-            onClick={() => {
-              navigate('/rent');
-            }}
-            label="홈으로 가기"
-          ></Button>
-        ),
-      });
-    } else {
-      // [todo] 한 개일 때 분기처리
+      console.log('현재 사용자 정보:', user);
+      console.log('사용자 admin 권한:', user?.admin);
+      console.log('조직 정보:', user?.organizationInfo);
+
+      // 모든 가능한 조직 ID 확인
+      const universityId = user?.organizationInfo?.university?.id;
+      const collegeId = user?.organizationInfo?.college?.id;
+      const departmentId = user?.organizationInfo?.department?.id;
+
+      console.log('가능한 조직 ID들:', { universityId, collegeId, departmentId });
+
+      // admin 권한에 따라 조직 ID 선택
+      if (user?.admin === 'university' && universityId) {
+        currentOrganizationId = universityId;
+        console.log('대학교 관리자로 설정됨:', currentOrganizationId);
+      } else if (user?.admin === 'college' && collegeId) {
+        currentOrganizationId = collegeId;
+        console.log('총학생회 관리자로 설정됨:', currentOrganizationId);
+      } else if (user?.admin === 'department' && departmentId) {
+        currentOrganizationId = departmentId;
+        console.log('학과 관리자로 설정됨:', currentOrganizationId);
+      } else {
+        // admin이 none이거나 조직 정보가 없는 경우, 첫 번째로 사용 가능한 조직 ID 사용
+        currentOrganizationId = universityId || collegeId || departmentId;
+        console.log('기본 조직 ID 사용:', currentOrganizationId);
+      }
+
+      if (!currentOrganizationId) {
+        console.error('조직 ID를 찾을 수 없습니다. 사용자 정보:', user);
+        setTokenError('사용자 조직 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      console.log('최종 선택된 조직 ID:', currentOrganizationId);
+
+      // [todo] api 수정GET/api/rental-requests/{organizationId}/holding
+      // 내 홀딩 예약 중 특정 조직의 것만
+      const res = await getRequest<ApiResponse<Item>>(
+        `http://43.200.61.108:8082/api/rental-requests/${currentOrganizationId}/holding`
+      );
+
+      // setData(res?.content);
+      const dummyContent = [
+        {
+          rentalId: 0,
+          unitId: 0,
+          assetNo: 'string',
+          unitStatus: 'string',
+          itemId: 0,
+          description: 'string',
+          universityId: 0,
+          organizationId: currentOrganizationId,
+          photos: [
+            {
+              assetNo: 'string',
+              key: 'string',
+              imageUrl: 'string',
+            },
+          ],
+        },
+      ];
+      setData(dummyContent);
+
+      if (dummyContent.length == 0) {
+        // if (res?.content.length == 0) {
+        openModal({
+          title: '대여할 수 있는 물품이 없어요',
+          caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
+          body: (
+            <Button
+              w="full"
+              onClick={() => {
+                navigate('/rent');
+              }}
+              label="홈으로 가기"
+            ></Button>
+          ),
+        });
+      } else {
+        // [todo] 한 개일 때 분기처리
+        console.log('데이터가 있습니다:', dummyContent.length);
+      }
+      console.log(res);
+    } catch (error) {
+      console.error('데이터 가져오기 실패:', error);
     }
-    console.log(res);
   };
 
   const handleBook = (itemId: number) => {

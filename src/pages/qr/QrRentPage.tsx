@@ -30,6 +30,23 @@ interface ApiResponse<T> {
   totalElements: number;
 }
 
+// API 응답 타입 정의
+interface HoldingItem {
+  rentalId: number;
+  unitId: number;
+  assetNo: string;
+  unitStatus: string;
+  itemId: number;
+  description: string;
+  universityId: number;
+  organizationId: number;
+  photos: {
+    assetNo: string;
+    key: string;
+    imageUrl: string;
+  }[];
+}
+
 // 아이템 타입 정의
 export interface Item {
   id: number;
@@ -65,7 +82,7 @@ export default function QrRentPage() {
       setIsLoadingToken(true);
       setTokenError('');
 
-      const response = await postRequest<QRTokenResponse>('/api/qrs/resolve', {
+      const response = await postRequest<QRTokenResponse>('/qrs/resolve', {
         token: token,
       });
 
@@ -111,7 +128,8 @@ export default function QrRentPage() {
     console.log('검색 실행:', query);
   };
 
-  const [data, setData] = useState<Item[]>([]);
+  // 데이터 상태를 HoldingItem 타입으로 변경
+  const [data, setData] = useState<HoldingItem[]>([]);
 
   const basicOptions: SegmentOption[] = [
     { value: 'all', label: '전체' },
@@ -123,7 +141,7 @@ export default function QrRentPage() {
   const [selectedValue, setSelectedValue] = useState(basicOptions[0].value);
 
   // 풀스크린 모달을 여는 함수
-  const handleOpenModal = (item: Item) => {
+  const handleOpenModal = (item: HoldingItem) => {
     openModal({
       title: `${item?.id}번 물품이 배정되었습니다!`, // [todo]:
       caption: `${item?.id}번 물품을 가져가세요!`,
@@ -158,67 +176,75 @@ export default function QrRentPage() {
 
   const fetchListData = async () => {
     try {
-      // authStore에서 organizationId 가져오기
+      // authStore에서 organizationId 가져오기 - 모든 조직 확인
       let currentOrganizationId: number | undefined;
 
-      if (user?.admin === 'university') {
-        currentOrganizationId = user.organizationInfo?.university?.id;
-      } else if (user?.admin === 'college') {
-        currentOrganizationId = user.organizationInfo?.college?.id;
-      } else if (user?.admin === 'department') {
-        currentOrganizationId = user.organizationInfo?.department?.id;
+      console.log('현재 사용자 정보:', user);
+      console.log('사용자 admin 권한:', user?.admin);
+      console.log('조직 정보:', user?.organizationInfo);
+
+      // 모든 가능한 조직 ID 확인
+      const universityId = user?.organizationInfo?.university?.id;
+      const collegeId = user?.organizationInfo?.college?.id;
+      const departmentId = user?.organizationInfo?.department?.id;
+
+      console.log('가능한 조직 ID들:', { universityId, collegeId, departmentId });
+
+      // admin 권한에 따라 조직 ID 선택
+      if (user?.admin === 'university' && universityId) {
+        currentOrganizationId = universityId;
+        console.log('대학교 관리자로 설정됨:', currentOrganizationId);
+      } else if (user?.admin === 'college' && collegeId) {
+        currentOrganizationId = collegeId;
+        console.log('총학생회 관리자로 설정됨:', currentOrganizationId);
+      } else if (user?.admin === 'department' && departmentId) {
+        currentOrganizationId = departmentId;
+        console.log('학과 관리자로 설정됨:', currentOrganizationId);
+      } else {
+        // admin이 none이거나 조직 정보가 없는 경우, 첫 번째로 사용 가능한 조직 ID 사용
+        currentOrganizationId = universityId || collegeId || departmentId;
+        console.log('기본 조직 ID 사용:', currentOrganizationId);
       }
 
       if (!currentOrganizationId) {
-        console.error('조직 ID를 찾을 수 없습니다.');
+        console.error('조직 ID를 찾을 수 없습니다. 사용자 정보:', user);
+        setTokenError('사용자 조직 정보를 찾을 수 없습니다.');
         return;
       }
 
-      // [todo] api 수정GET/api/rental-requests/{organizationId}/holding
-      // 내 홀딩 예약 중 특정 조직의 것만
-      const res = await getRequest<ApiResponse<Item>>(
+      console.log('최종 선택된 조직 ID:', currentOrganizationId);
+
+      // 실제 API 호출하여 홀딩 중인 물품 가져오기
+      const res = await getRequest<HoldingItem[]>(
         `http://43.200.61.108:8082/api/rental-requests/${currentOrganizationId}/holding`
       );
 
-      // setData(res?.content);
-      const dummyContent: Item[] = [
-        {
-          id: 0,
-          universityId: 1,
-          organizationId: currentOrganizationId,
-          name: '테스트 물품',
-          totalQuantity: 1,
-          availableQuantity: 1,
-          isActive: true,
-          coverKey: 'test-image.jpg',
-          description: '테스트용 더미 데이터입니다.',
-          countWaitList: 0,
-        },
-      ];
-      setData(dummyContent);
+      if (res && Array.isArray(res)) {
+        setData(res);
+        console.log('홀딩 중인 물품 데이터:', res);
 
-      if (dummyContent.length == 0) {
-        // if (res?.content.length == 0) {
-        openModal({
-          title: '대여할 수 있는 물품이 없어요',
-          caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
-          body: (
-            <Button
-              w="full"
-              onClick={() => {
-                navigate('/rent');
-              }}
-              label="홈으로 가기"
-            ></Button>
-          ),
-        });
+        if (res.length === 0) {
+          openModal({
+            title: '대여할 수 있는 물품이 없어요',
+            caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
+            body: (
+              <Button
+                w="full"
+                onClick={() => {
+                  navigate('/rent');
+                }}
+                label="홈으로 가기"
+              ></Button>
+            ),
+          });
+        }
       } else {
-        // [todo] 한 개일 때 분기처리
-        console.log('데이터가 있습니다:', dummyContent.length);
+        console.log('응답 데이터가 없거나 배열이 아님:', res);
+        setData([]);
       }
-      console.log(res);
     } catch (error) {
       console.error('데이터 가져오기 실패:', error);
+      setData([]);
     }
   };
 
@@ -335,6 +361,7 @@ export default function QrRentPage() {
     return null;
   };
 
+  // 데이터 렌더링 부분 수정
   return (
     <Box px={10}>
       <PageHeader
@@ -349,12 +376,19 @@ export default function QrRentPage() {
       {renderQRTokenInfo()}
 
       <VStack gap={2} align="stretch" mt={2}>
-        {data.map((el) => {
+        {data.map((item) => {
           return (
             <Card
-              image={<Image src={`${el?.coverKey}`} />}
-              title={el?.name}
-              subtitle={el?.description}
+              key={item.rentalId}
+              image={
+                item.photos && item.photos.length > 0 ? (
+                  <Image src={item.photos[0].imageUrl} alt={item.description} />
+                ) : (
+                  <Image src="/placeholder-image.jpg" alt="이미지 없음" />
+                )
+              }
+              title={`${item.assetNo} - ${item.description}`}
+              subtitle={`상태: ${item.unitStatus}`}
               bottomExtra={
                 <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
                   <Button
@@ -362,11 +396,7 @@ export default function QrRentPage() {
                     size="sm"
                     label={'대여하기'}
                     onClick={() => {
-                      //   if (canRent) {
-                      handleOpenModal(el);
-                      //   } else if (canBook) {
-                      //     handleOpenBookModal(el);
-                      //   }
+                      handleOpenModal(item);
                     }}
                   ></Button>
                 </Flex>
