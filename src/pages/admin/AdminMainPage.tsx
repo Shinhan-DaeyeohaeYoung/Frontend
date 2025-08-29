@@ -1,81 +1,202 @@
-import { Box, Heading, Text, VStack, Button, SimpleGrid } from '@chakra-ui/react';
-import { Link } from 'react-router-dom';
+import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
+import { PageHeader } from '@/components/PageHeader';
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/Card';
+import { useModalStore } from '@/stores/modalStore';
+import { Tag } from '@/components/Tag';
+import { Button } from '@/components/Button';
+import { getRequest } from '@/api/requests';
+import { useAuthStore } from '@/stores/authStore';
+import AprovalDetailModalContent from './components/AprovalDetailModalContent';
+
+// 반납 신청 타입 정의
+interface ReturnRequest {
+  id: number;
+  universityId: number;
+  organizationId: number;
+  rentalId: number;
+  userId: number;
+  status: string;
+  submittedImageKey: string;
+  submittedImageUrl: string;
+  requestedAt: string;
+  isActive: boolean;
+}
+
+// API 응답 타입
+interface ReturnRequestResponse {
+  content: ReturnRequest[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
 
 export default function AdminMainPage() {
-  return (
-    <Box p={6}>
-      <VStack gap={8} align="center">
-        <Heading size="xl" color="gray.700">
-          ⚙️ 관리자 메인
-        </Heading>
+  const { openModal } = useModalStore();
+  const { user } = useAuthStore();
 
-        <Text fontSize="lg" textAlign="center" color="gray.600">
-          대여 서비스 관리 시스템입니다
-        </Text>
+  const [data, setData] = useState<ReturnRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        <SimpleGrid columns={{ base: 1, md: 2 }} gap={6} w="full" maxW="800px">
-          <Button asChild size="lg" h="120px" colorScheme="blue">
-            <Link to="/admin/overview">📊 현황 (실시간/지표)</Link>
-          </Button>
+  // 반납 신청 목록 가져오기
+  const fetchReturnRequests = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-          <Button asChild size="lg" h="120px" colorScheme="purple">
-            <Link to="/admin/qr">📱 QR 관리</Link>
-          </Button>
+      // 사용자의 조직 정보에서 organizationId 가져오기
+      const organizationId =
+        user?.organizationInfo?.university?.id ||
+        user?.organizationInfo?.college?.id ||
+        user?.organizationInfo?.department?.id;
 
-          <Button asChild size="lg" h="120px" colorScheme="green">
-            <Link to="/admin/reports">📋 보고서</Link>
-          </Button>
+      if (!organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.');
+        return;
+      }
 
-          <Button asChild size="lg" h="120px" colorScheme="teal">
-            <Link to="/admin/account">💰 계정 관리</Link>
-          </Button>
-        </SimpleGrid>
+      // API 호출
+      const response = await getRequest<ReturnRequestResponse>(
+        `/admin/return-requests?status=REQUESTED&page=0&size=20&organizationId=${organizationId}`
+      );
 
-        {/* 간단한 통계 */}
-        <Box w="full" maxW="800px">
-          <Heading size="md" mb={4} color="gray.700">
-            📈 오늘의 요약
-          </Heading>
-          <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md" textAlign="center">
-              <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                15
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                신규 대여
-              </Text>
-            </Box>
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md" textAlign="center">
-              <Text fontSize="2xl" fontWeight="bold" color="green.600">
-                8
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                반납 완료
-              </Text>
-            </Box>
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md" textAlign="center">
-              <Text fontSize="2xl" fontWeight="bold" color="orange.600">
-                3
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                대기중
-              </Text>
-            </Box>
-            <Box p={4} border="1px solid" borderColor="gray.200" rounded="md" textAlign="center">
-              <Text fontSize="2xl" fontWeight="bold" color="red.600">
-                1
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                지연 반납
-              </Text>
-            </Box>
-          </SimpleGrid>
+      if (response && response.content) {
+        setData(response.content);
+        console.log('반납 신청 목록:', response.content);
+      } else {
+        setData([]);
+      }
+    } catch (error) {
+      console.error('반납 신청 목록 가져오기 실패:', error);
+      setError('데이터를 가져오는 중 오류가 발생했습니다.');
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 가져오기
+  useEffect(() => {
+    fetchReturnRequests();
+  }, []);
+
+  // 풀스크린 모달을 여는 함수
+  const handleOpenItemModal = (item: ReturnRequest) => {
+    openModal({
+      title: `반납 신청 승인`,
+      caption: '반납 상태를 확인하고 승인 처리해주세요',
+      body: <AprovalDetailModalContent returnRequestId={item.id} />, // item.id는 반납 요청 ID
+      footer: '',
+      fullscreen: true, // 풀스크린 모드 활성화
+    });
+  };
+
+  const handleInfo = (id: number) => {
+    console.log('확인:', id);
+    // 해당 아이템 찾기
+    const item = data.find((el) => el.id === id);
+    if (item) {
+      handleOpenItemModal(item);
+    }
+  };
+
+  // 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor={'transparent'}
+          title={'승인 대기 중'}
+          subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
+        />
+        <Box textAlign="center" py={20}>
+          <Text>데이터를 불러오는 중...</Text>
         </Box>
+      </Box>
+    );
+  }
 
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/main">← 메인으로 돌아가기</Link>
-        </Button>
-      </VStack>
+  // 에러 상태 표시
+  if (error) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor={'transparent'}
+          title={'승인 대기 중'}
+          subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
+        />
+        <Box textAlign="center" py={20}>
+          <Text color="red.500">{error}</Text>
+          <Button mt={4} onClick={fetchReturnRequests} label="다시 시도" />
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box px={10}>
+      <PageHeader
+        px={0}
+        py={10}
+        title={'승인 대기 중'}
+        subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
+      />
+
+      <Flex justify={'space-between'} mt={2}>
+        <Text fontSize="sm" color="gray.500">
+          총 {data.length}개의 반납 신청
+        </Text>
+        <Button label={'최신순 ^'} variant={'text'} size={'sm'} onClick={fetchReturnRequests} />
+      </Flex>
+
+      {data.length === 0 ? (
+        <Box textAlign="center" py={20}>
+          <Text color="gray.500">승인 대기 중인 반납 신청이 없습니다.</Text>
+        </Box>
+      ) : (
+        <VStack gap={2} align="stretch" mt={2}>
+          {data.map((el) => (
+            <Card
+              key={el.id}
+              image={
+                <Image
+                  src={
+                    el.submittedImageUrl || 'https://via.placeholder.com/300x200?text=이미지+없음'
+                  }
+                  alt="반납 이미지"
+                />
+              }
+              title={`반납 신청 #${el.id}`}
+              subtitle={`대여 ID: ${el.rentalId} | 사용자 ID: ${el.userId}`}
+              extra={<Tag label={el.status} variant="default" />}
+              bottomExtra={
+                <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
+                  <Text fontSize={'sm'} color={'gray.500'}>
+                    신청일: {new Date(el.requestedAt).toLocaleDateString('ko-KR')}
+                  </Text>
+                  <Flex>
+                    <Button
+                      size="sm"
+                      label={'확인하기'}
+                      colorScheme="green"
+                      onClick={() => handleInfo(el.id)}
+                    />
+                  </Flex>
+                </Flex>
+              }
+            />
+          ))}
+        </VStack>
+      )}
     </Box>
   );
 }

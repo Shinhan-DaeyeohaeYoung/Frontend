@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Stack, Text, type BoxProps } from '@chakra-ui/react';
+import { Box, Stack, Text, Image, type BoxProps } from '@chakra-ui/react';
 
 export interface PageHeaderProps extends BoxProps {
   /** 메인 헤더 제목 */
@@ -10,33 +10,37 @@ export interface PageHeaderProps extends BoxProps {
   align?: 'left' | 'center' | 'right';
   /** 커스텀 배경색 */
   bgColor?: string;
+  /** 제목 색상 */
+  titleColor?: string;
+  /** 부제목 색상 */
+  subtitleColor?: string;
+  /** 우측 하단에 표시할 이미지 (URL, 경로, Blob 가능) */
+  imageSrc?: string;
+  /** 이미지 크기 */
+  imageSize?: string | number;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
   align = 'left',
-  bgColor,
+  bgColor = '#A1C9FA',
+  titleColor = 'white',
+  subtitleColor = 'gray.800',
+  imageSrc,
+  imageSize = 100,
   ...rest
 }) => {
   const textAlign = align === 'left' ? 'start' : align === 'right' ? 'end' : 'center';
 
   return (
-    <Box
-      bg={bgColor || 'gray.50'}
-      px={6}
-      py={8}
-      w="100%"
-      // _dark={{
-      //   bg: bgColor ? undefined : 'gray.800',
-      // }}
-      {...rest}
-    >
+    <Box position="relative" bg={bgColor || 'gray.50'} px={6} py={8} w="100%" minH={240} {...rest}>
       <Stack gap={2} align={align === 'center' ? 'center' : 'flex-start'} textAlign={textAlign}>
         <Text
-          fontSize="2xl"
+          fontSize="4xl"
+          fontFamily={'jalnan'}
           fontWeight="bold"
-          color="gray.900"
+          color={titleColor}
           _dark={{ color: 'white' }}
           lineHeight="shorter"
         >
@@ -46,9 +50,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         {subtitle && (
           <Text
             fontSize="sm"
-            color="gray.600"
+            color={subtitleColor}
             _dark={{ color: 'gray.300' }}
             maxW="md"
+            fontWeight={500}
             lineHeight="relaxed"
             whiteSpace="pre-line"
           >
@@ -56,6 +61,19 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </Text>
         )}
       </Stack>
+
+      {imageSrc && (
+        <Image
+          src={imageSrc}
+          alt="header decoration"
+          position="absolute"
+          right={4}
+          bottom={4}
+          boxSize={imageSize}
+          objectFit="contain"
+          pointerEvents="none"
+        />
+      )}
     </Box>
   );
 };

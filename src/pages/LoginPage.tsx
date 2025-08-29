@@ -12,8 +12,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { tokenStorage } from '../api/client';
-import { postRequest } from '../api/requests'; // 요청 유틸 함수 import
-import { toaster } from '../components/ui/toaster';
+import { postRequest, getRequest } from '../api/requests'; // 요청 유틸 함수 import
+import { toaster } from '../components/UI/toaster';
 import { useAuthStore } from '../stores/authStore';
 
 interface LoginResponse {
@@ -45,6 +45,14 @@ interface Organization {
   parentOrganizationId: number | null;
   role: string;
   active: boolean;
+}
+
+interface UniversityInfo {
+  id: number;
+  name: string;
+  code: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const universities = createListCollection({
@@ -123,63 +131,100 @@ export default function LoginPage() {
 
       // 사용자 정보 가져오기
       try {
-        const userInfo = await postRequest<UserInfo>('/users/me', {});
+        const userInfo = await getRequest<UserInfo>('/users/me', {});
 
         if (userInfo) {
-          // 조직 정보 가져오기
+          // 1. 대학 정보 가져오기 (/api/universities/me) - 대학 번호
+          let universityData = null; // 변수명 변경
           try {
-            const organizations = await postRequest<Organization[]>('/organizations', {});
+            const universityResponse = await getRequest<UniversityInfo>('/universities/me', {});
+            if (universityResponse) {
+              universityData = {
+                id: universityResponse.id, // 대학 번호 (1)
+                name: universityResponse.name, // 대학 이름 (서울대학교)
+              };
+              // authStore에 universityId 설정 (대학 번호)
+              useAuthStore.getState().setUniversityId(universityResponse.id);
+            }
+          } catch (universityError) {
+            console.error('대학 정보 가져오기 실패:', universityError);
+            // 기본값으로 설정
+            universityData = {
+              id: parseInt(universityId[0]),
+              name: '서울대학교',
+            };
+            useAuthStore.getState().setUniversityId(parseInt(universityId[0]));
+          }
+
+          // 2. 조직 정보 가져오기 (/api/organizations) - 조직 번호들
+          try {
+            const organizations = await getRequest<Organization[]>('/organizations', {});
 
             // 조직 정보 처리
-            let universityInfo = null;
+            let universityOrgInfo = null; // 변수명 변경
             let collegeInfo = null;
             let departmentInfo = null;
-            let isAdmin = false;
+            let adminLevel: 'university' | 'college' | 'department' | 'none' = 'none';
 
             if (organizations && organizations.length > 0) {
-              // 대학교 정보 찾기
-              const university = organizations.find((org) => org.type === 'UNIVERSITY');
+              // 대학교 조직 정보 찾기
+              const university = organizations.find(
+                (org: Organization) => org.type === 'UNIVERSITY'
+              );
               if (university) {
-                universityInfo = {
-                  id: university.organizationId,
-                  name: university.name,
+                universityOrgInfo = {
+                  id: university.organizationId, // 조직 번호 (2)
+                  name: university.name, // 조직 이름 (서울대학교 총학생회)
                 };
+                // 대학교 레벨 관리자인지 확인
+                if (university.role === 'ORG_ADMIN') {
+                  adminLevel = 'university';
+                }
               }
 
               // 단과대 정보 찾기
-              const college = organizations.find((org) => org.type === 'COLLEGE');
+              const college = organizations.find((org: Organization) => org.type === 'COLLEGE');
               if (college) {
                 collegeInfo = {
                   id: college.organizationId,
                   name: college.name,
                 };
+                // 단과대 레벨 관리자인지 확인 (대학교보다 낮은 레벨)
+                if (college.role === 'ORG_ADMIN' && adminLevel === 'none') {
+                  adminLevel = 'college';
+                }
               }
 
               // 학과 정보 찾기
-              const department = organizations.find((org) => org.type === 'DEPARTMENT');
+              const department = organizations.find(
+                (org: Organization) => org.type === 'DEPARTMENT'
+              );
               if (department) {
                 departmentInfo = {
                   id: department.organizationId,
                   name: department.name,
                 };
+                // 학과 레벨 관리자인지 확인 (가장 낮은 레벨)
+                if (department.role === 'ORG_ADMIN' && adminLevel === 'none') {
+                  adminLevel = 'department';
+                }
               }
-
-              // 관리자 권한 확인
-              isAdmin = organizations.some((org) => org.role === 'ORG_ADMIN');
             }
 
             // authStore에 사용자 정보 저장
             const userData = {
               id: userInfo.id.toString(),
               name: userInfo.name,
-              university: universityInfo?.name || '서울대학교',
+              university: universityData?.name || '서울대학교', // 대학 정보에서 가져온 이름
+              universityId: universityData?.id || parseInt(universityId[0]), // 대학 번호 (1)
               studentId: userInfo.studentId,
-              isAdmin: isAdmin || userInfo.roles.includes('ROLE_ADMIN'),
+              admin: adminLevel,
               email: userInfo.email,
-              universityInfo,
-              collegeInfo,
-              departmentInfo,
-              organizations: organizations || [],
+              organizationInfo: {
+                university: universityOrgInfo, // 조직에서 가져온 대학 정보 (조직 번호 2)
+                college: collegeInfo,
+                department: departmentInfo,
+              },
             };
 
             useAuthStore.getState().setUser(userData);
@@ -189,14 +234,17 @@ export default function LoginPage() {
             const userData = {
               id: userInfo.id.toString(),
               name: userInfo.name,
-              university: '서울대학교',
+              university: universityData?.name || '서울대학교',
+              universityId: universityData?.id || parseInt(universityId[0]),
               studentId: userInfo.studentId,
-              isAdmin: userInfo.roles.includes('ROLE_ADMIN'),
+              admin: 'none' as const,
               email: userInfo.email,
-              universityInfo: null,
-              collegeInfo: null,
-              departmentInfo: null,
-              organizations: [],
+              organizationInfo: {
+                // info -> organizationInfo로 변경
+                university: null,
+                college: null,
+                department: null,
+              },
             };
 
             useAuthStore.getState().setUser(userData);
@@ -208,14 +256,17 @@ export default function LoginPage() {
         const defaultUserData = {
           id: studentId,
           name: name || '사용자',
-          university: universityId[0],
+          university: '서울대학교',
+          universityId: parseInt(universityId[0]),
           studentId: studentId,
-          isAdmin: false,
+          admin: 'none' as const,
           email: '',
-          universityInfo: null,
-          collegeInfo: null,
-          departmentInfo: null,
-          organizations: [],
+          organizationInfo: {
+            // info -> organizationInfo로 변경
+            university: null,
+            college: null,
+            department: null,
+          },
         };
 
         useAuthStore.getState().setUser(defaultUserData);
@@ -230,13 +281,16 @@ export default function LoginPage() {
 
       navigate('/main');
     } catch (error: unknown) {
-      console.error('=== 로그인 에러 ===', error);
+      let errorMessage = '로그인 중 오류가 발생했습니다.';
 
-      let errorMessage = '로그인에 실패했습니다.';
-
-      // 구체적인 에러 처리
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as any;
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string };
+            status?: number;
+          };
+        };
+
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
         } else if (axiosError.response?.status === 401) {

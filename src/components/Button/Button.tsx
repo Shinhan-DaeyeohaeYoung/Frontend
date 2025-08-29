@@ -24,6 +24,7 @@ export const Button: React.FC<AppButtonProps> = ({
         px={3}
         py={1}
         borderColor="gray.300"
+        colorPalette="accent"
         _hover={{ bg: 'gray.100' }}
         {...rest}
       >
@@ -38,7 +39,7 @@ export const Button: React.FC<AppButtonProps> = ({
         variant="ghost" // 배경 없음
         size="sm"
         fontSize="sm"
-        colorScheme="gray" // hover 색상용
+        colorPalette="accent" // hover 색상용
         color="gray.600"
         _hover={{ bg: 'gray.200' }}
         {...rest}
@@ -53,8 +54,8 @@ export const Button: React.FC<AppButtonProps> = ({
     <ChakraButton
       size={size}
       variant="solid"
-      borderColor="gray.400"
-      colorScheme="blue"
+      // borderColor="gray.400"
+      backgroundColor="accent.500"
       _hover={{ bg: 'gray.100' }}
       {...rest}
     >

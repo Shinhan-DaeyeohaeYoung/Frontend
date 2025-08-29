@@ -6,3 +6,11 @@
   font-style: normal;
   font-display: swap;
 }
+
+@font-face {
+  font-family: 'jalnan';
+  src: url('/fonts/Jalnan2.otf') format('woff2');
+  font-weight: 100 900; /* variable weight 범위 */
+  font-style: normal;
+  font-display: swap;
+}
