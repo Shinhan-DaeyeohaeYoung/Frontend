@@ -6,8 +6,8 @@ import { useRef, useState } from 'react';
 import { useModalStore } from '@/stores/modalStore';
 import { useAuthStore } from '@/stores/authStore';
 import Modal from '@/components/Modal/Modal';
-import AppHeader from '@/components/layout/AppHeader';
-import SideMenu from '@/components/layout/SideMenu';
+import AppHeader from '@/components/Layout/AppHeader';
+import SideMenu from '@/components/Layout/SideMenu';
 
 // 헤더 프레임 타입 정의
 type HeaderFrame = 'none' | 'user' | 'user-back' | 'admin' | 'admin-back';
