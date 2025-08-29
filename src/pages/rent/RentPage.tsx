@@ -8,7 +8,7 @@ import { useModalStore } from '@/stores/modalStore';
 import ItemDetailModalContent from './components/ItemDetailModalContent';
 import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
-
+import logo_01 from '@/assets/imgs/logo_01.png';
 //   availableQuantity < totalQuantity면 대여가능
 // countWaitList < totalQuantity면 대기열 가능
 // countWaitList >= totalQuantity면 대기열 불가능
@@ -148,16 +148,23 @@ export default function RentPage() {
   }, [selectedValue]);
 
   return (
-    <Box px={10}>
+    <Box
+    // px={10}
+    >
       <PageHeader
-        px={0}
-        py={10}
-        bgColor={'transparent'}
+        px={4}
+        pt={10}
+        py={16}
+        // bgColor={'#A1C9FA'}
+        // bgColor={'transparent'}
+        // titleColor="#002DAB"
+        imageSrc={logo_01}
+        imageSize={40}
         title={'대여해요'}
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>
 
-      <VStack gap={2} align="stretch" mt={2}>
+      <VStack gap={0} align="stretch" mt={4} borderBottom="1px solid" borderColor="gray.200">
         {data.map((el) => {
           const canRent = el?.availableQuantity < el?.totalQuantity;
           const canBook = el?.countWaitList < el?.totalQuantity; // [todo] 예약 로직 수정

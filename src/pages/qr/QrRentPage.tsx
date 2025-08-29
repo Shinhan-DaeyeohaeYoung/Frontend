@@ -211,7 +211,6 @@ export default function QrRentPage() {
       <PageHeader
         px={0}
         py={10}
-        bgColor={'transparent'}
         title={'대여해요'}
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>

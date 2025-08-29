@@ -104,13 +104,7 @@ export default function AdminUnitOverviewPage() {
   if (error || !itemDetail) {
     return (
       <Box px={10}>
-        <PageHeader
-          px={0}
-          py={10}
-          bgColor="transparent"
-          title="오류 발생"
-          subtitle="데이터를 불러올 수 없습니다."
-        />
+        <PageHeader px={0} py={10} title="오류 발생" subtitle="데이터를 불러올 수 없습니다." />
         <Text color="red.500">오류: {error}</Text>
         <Button label="다시 시도" onClick={fetchItemDetail} mt={4} />
       </Box>

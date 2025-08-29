@@ -106,7 +106,6 @@ export default function RentPage() {
       <PageHeader
         px={0}
         py={10}
-        bgColor={'transparent'}
         title={'승인 대기 중'}
         subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
       />

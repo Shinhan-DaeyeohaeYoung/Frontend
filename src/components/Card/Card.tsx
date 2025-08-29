@@ -12,11 +12,11 @@ interface CardProps {
 export const Card = ({ image, title, subtitle, extra, onClick, bottomExtra }: CardProps) => {
   return (
     <Flex
-      border="1px solid"
-      borderColor="gray.300"
-      borderRadius="md"
+      borderBottom="1px solid"
+      borderColor="gray.200"
       overflow="hidden"
-      p={2}
+      mx={4}
+      py={4}
       align="flex-start"
       transition="all 0.2s ease-in-out"
       _hover={

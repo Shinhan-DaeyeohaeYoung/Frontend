@@ -201,7 +201,6 @@ export default function AdminQrPage() {
             title={getPageTitle()}
             subtitle={getPageSubtitle()}
             align="center"
-            bgColor="transparent"
             color="white"
           />
 

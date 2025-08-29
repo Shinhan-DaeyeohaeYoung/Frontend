@@ -67,7 +67,6 @@ export default function AdminOverviewPage() {
         <PageHeader
           px={0}
           py={10}
-          bgColor="transparent"
           title="물품 관리"
           subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
         />
@@ -82,7 +81,6 @@ export default function AdminOverviewPage() {
         <PageHeader
           px={0}
           py={10}
-          bgColor="transparent"
           title="물품 관리"
           subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
         />
@@ -97,7 +95,6 @@ export default function AdminOverviewPage() {
       <PageHeader
         px={0}
         py={10}
-        bgColor="transparent"
         title="물품 관리"
         subtitle="등록된 물품들을 확인하고 관리할 수 있습니다."
       />

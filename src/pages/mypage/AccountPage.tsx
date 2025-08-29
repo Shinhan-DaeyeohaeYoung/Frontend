@@ -135,11 +135,7 @@ const AccountPage: React.FC = () => {
 
   return (
     <Box position="relative">
-      <PageHeader
-        bg="transparent"
-        title="계좌 이체내역"
-        subtitle="지금까지의 보증금 내역을 확인해보세요"
-      />
+      <PageHeader title="계좌 이체내역" subtitle="지금까지의 보증금 내역을 확인해보세요" />
 
       <Stack p={4} gap={4}>
         {/* 계좌 정보 박스: 내 첫번째/primary 계좌 노출 */}

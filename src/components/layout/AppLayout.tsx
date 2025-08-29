@@ -210,7 +210,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
             minW="375px"
             h="100dvh"
             overflow="hidden"
-            bg="white"
+            bg="white" // 미세한 흰색
+            // bg="#fafaf8" // 미세한 흰색
             boxShadow={{ base: 'none', lg: 'lg' }}
             rounded={{ base: 'none', lg: '2xl' }}
           >
