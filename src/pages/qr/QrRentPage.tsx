@@ -67,7 +67,7 @@ export default function QrRentPage() {
   const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
   const [tokenError, setTokenError] = useState<string>('');
 
-  // QR 토큰 검증 함수
+  // QR 토큰 검증 함수 수정
   const validateQRToken = async (token: string) => {
     try {
       setIsLoadingToken(true);
@@ -78,17 +78,48 @@ export default function QrRentPage() {
       });
 
       if (response) {
+        // 🔒 중요: QR 토큰의 organizationId와 사용자 소속 조직 비교
+        if (!user) {
+          setTokenError('사용자 정보를 찾을 수 없습니다.');
+          return;
+        }
+
+        // 사용자의 소속 조직 정보 확인
+        const userUniversityId = user.organizationInfo?.university?.id;
+        const userCollegeId = user.organizationInfo?.college?.id;
+        const userDepartmentId = user.organizationInfo?.department?.id;
+
+        // QR 토큰의 organizationId가 사용자 소속 조직 중 하나와 일치하는지 확인
+        const isAuthorized =
+          response.organizationId === userUniversityId ||
+          response.organizationId === userCollegeId ||
+          response.organizationId === userDepartmentId;
+
+        if (!isAuthorized) {
+          setTokenError(
+            '해당 조직의 대여 권한이 없습니다. 본인 소속 조직의 QR만 스캔할 수 있습니다.'
+          );
+          setIsTokenValid(false);
+          return;
+        }
+
+        // 권한 확인 성공
         setQrTokenData(response);
         setIsTokenValid(true);
-        console.log('QR 토큰 검증 성공:', response);
+        console.log('QR 토큰 검증 및 권한 확인 성공:', response);
+
+        // 토큰 검증 성공 후 대여 목록 가져오기
+        await fetchListData();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QR 토큰 검증 실패:', error);
       setIsTokenValid(false);
 
-      if (error.response?.status === 400) {
+      const axiosError = error as { response?: { status?: number } };
+
+      if (axiosError.response?.status === 400) {
         setTokenError('토큰이 누락되었거나 형식이 잘못되었습니다.');
-      } else if (error.response?.status === 401) {
+      } else if (axiosError.response?.status === 401) {
         setTokenError('토큰이 만료되었거나 유효하지 않습니다.');
       } else {
         setTokenError('토큰 검증 중 오류가 발생했습니다.');
@@ -119,17 +150,19 @@ export default function QrRentPage() {
       console.log('대여 확정 성공:', response);
 
       // 성공 시 결과 모달 표시
-      handleResultModal(item);
-    } catch (error: any) {
+      handleResultModal();
+    } catch (error: unknown) {
       console.error('대여 확정 실패:', error);
 
       let errorMessage = '대여 확정 중 오류가 발생했습니다.';
 
-      if (error.response?.status === 400) {
+      const axiosError = error as { response?: { status?: number } };
+
+      if (axiosError.response?.status === 400) {
         errorMessage = '만료되었거나 상태 전이가 불가능합니다.';
-      } else if (error.response?.status === 403) {
+      } else if (axiosError.response?.status === 403) {
         errorMessage = '본인이 소유한 예약이 아닙니다.';
-      } else if (error.response?.status === 404) {
+      } else if (axiosError.response?.status === 404) {
         errorMessage = '예약을 찾을 수 없습니다.';
       }
 
@@ -156,7 +189,7 @@ export default function QrRentPage() {
   };
 
   // 결과 모달 수정
-  const handleResultModal = (item: HoldingItem) => {
+  const handleResultModal = () => {
     openModal({
       title: '대여가 완료되었습니다.',
       caption:
@@ -166,7 +199,7 @@ export default function QrRentPage() {
           w="full"
           onClick={() => {
             closeModal(); // 모달 닫기
-            navigate('/'); // 홈으로 이동
+            navigate('/main'); // 홈으로 이동
           }}
           label="홈으로 가기"
         ></Button>
@@ -174,45 +207,17 @@ export default function QrRentPage() {
     });
   };
 
+  // fetchListData 함수 수정 - QR 토큰의 organizationId 사용
   const fetchListData = async () => {
     try {
-      // authStore에서 organizationId 가져오기 - 모든 조직 확인
-      let currentOrganizationId: number | undefined;
-
-      console.log('현재 사용자 정보:', user);
-      console.log('사용자 admin 권한:', user?.admin);
-      console.log('조직 정보:', user?.organizationInfo);
-
-      // 모든 가능한 조직 ID 확인
-      const universityId = user?.organizationInfo?.university?.id;
-      const collegeId = user?.organizationInfo?.college?.id;
-      const departmentId = user?.organizationInfo?.department?.id;
-
-      console.log('가능한 조직 ID들:', { universityId, collegeId, departmentId });
-
-      // admin 권한에 따라 조직 ID 선택
-      if (user?.admin === 'university' && universityId) {
-        currentOrganizationId = universityId;
-        console.log('대학교 관리자로 설정됨:', currentOrganizationId);
-      } else if (user?.admin === 'college' && collegeId) {
-        currentOrganizationId = collegeId;
-        console.log('총학생회 관리자로 설정됨:', currentOrganizationId);
-      } else if (user?.admin === 'department' && departmentId) {
-        currentOrganizationId = departmentId;
-        console.log('학과 관리자로 설정됨:', currentOrganizationId);
-      } else {
-        // admin이 none이거나 조직 정보가 없는 경우, 첫 번째로 사용 가능한 조직 ID 사용
-        currentOrganizationId = universityId || collegeId || departmentId;
-        console.log('기본 조직 ID 사용:', currentOrganizationId);
-      }
-
-      if (!currentOrganizationId) {
-        console.error('조직 ID를 찾을 수 없습니다. 사용자 정보:', user);
-        setTokenError('사용자 조직 정보를 찾을 수 없습니다.');
+      // QR 토큰에서 검증된 organizationId 사용
+      if (!qrTokenData) {
+        console.error('QR 토큰 데이터가 없습니다.');
         return;
       }
 
-      console.log('최종 선택된 조직 ID:', currentOrganizationId);
+      const currentOrganizationId = qrTokenData.organizationId;
+      console.log('QR 토큰에서 가져온 조직 ID:', currentOrganizationId);
 
       // 실제 API 호출하여 홀딩 중인 물품 가져오기
       const res = await getRequest<HoldingItem[]>(
@@ -249,10 +254,8 @@ export default function QrRentPage() {
   };
 
   useEffect(() => {
-    try {
-      fetchListData();
-    } catch {}
-  }, []); // selectedValue 의존성 제거
+    fetchListData();
+  });
 
   // QR 토큰 정보 표시 컴포넌트
   const renderQRTokenInfo = () => {

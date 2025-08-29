@@ -1,112 +1,59 @@
-// ItemDetailModalContent.tsx
 import { useEffect, useState } from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Spinner,
-  AspectRatio,
-  SimpleGrid,
-  Flex,
-} from '@chakra-ui/react';
+import { Box, VStack, HStack, Text, Spinner, Image, Checkbox, Button } from '@chakra-ui/react';
+import { getRequest, postRequest } from '@/api/requests';
+import { useAuthStore } from '@/stores/authStore';
 
-interface ItemDetail {
+// 반납 신청 상세 타입 정의
+interface ReturnRequestDetail {
   id: number;
   universityId: number;
   organizationId: number;
-  name: string;
-  description: string;
-  deposit: number;
-  maxRentalDays: number;
-  totalQuantity: number;
-  availableQuantity: number;
+  rentalId: number;
+  userId: number;
+  status: string;
+  submittedImageKey: string;
+  submittedImageUrl: string;
+  beforeImageKey: string;
+  beforeImageUrl: string;
+  requestedAt: string;
   isActive: boolean;
-  unitStats: {
-    AVAILABLE: number;
-    RESERVED: number;
-    RENTED: number;
-    REPAIR: number;
-    LOST: number;
-    DISPOSED: number;
-  };
-  photos: Array<{
-    assetNo: string;
-    key: string;
-  }>;
-  units: {
-    content: Array<{
-      id: number;
-      itemId: number;
-      status: string;
-      assetNo: string;
-      currentRental: boolean | null;
-    }>;
-    page: number;
-    size: number;
-    totalElements: number;
-  };
 }
 
-const formatKRW = (v: number) => `${v.toLocaleString('ko-KR')}원`;
-const MOCK_ITEM_DETAIL: ItemDetail = {
-  id: 2,
-  universityId: 1,
-  organizationId: 2,
-  name: '충전기',
-  description: 'C타입 65W 충전기',
-  deposit: 10000,
-  maxRentalDays: 7,
-  totalQuantity: 2,
-  availableQuantity: 2,
-  isActive: true,
-  unitStats: {
-    AVAILABLE: 2,
-    RESERVED: 0,
-    RENTED: 0,
-    REPAIR: 0,
-    LOST: 0,
-    DISPOSED: 0,
-  },
-  photos: [
-    {
-      assetNo: '501',
-      key: 'univ/1/items/1/units/501.jpg',
-    },
-  ],
-  units: {
-    content: [
-      {
-        id: 3,
-        itemId: 2,
-        status: 'AVAILABLE',
-        assetNo: '501',
-        currentRental: null,
-      },
-      {
-        id: 4,
-        itemId: 2,
-        status: 'AVAILABLE',
-        assetNo: '502',
-        currentRental: null,
-      },
-    ],
-    page: 0,
-    size: 50,
-    totalElements: 2,
-  },
-};
+interface AprovalDetailModalContentProps {
+  returnRequestId: number; // itemId → returnRequestId로 변경
+  onApproveSuccess?: () => void; // 승인 성공 후 콜백 함수 추가
+}
 
-export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
-  const [data, setData] = useState<ItemDetail | null>(null);
+export default function AprovalDetailModalContent({
+  returnRequestId,
+  onApproveSuccess,
+}: AprovalDetailModalContentProps) {
+  const [data, setData] = useState<ReturnRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refundDeposit, setRefundDeposit] = useState(false);
+  const [approving, setApproving] = useState(false);
+
+  const { user } = useAuthStore();
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         if (!mounted) return;
-        setData(MOCK_ITEM_DETAIL);
+
+        // returnRequestId로 API 호출
+        const response = await getRequest<ReturnRequestDetail>(
+          `/admin/return-requests/${returnRequestId}`
+        );
+        if (mounted) {
+          setData(response);
+          console.log('반납 신청 상세:', response);
+        }
+      } catch (error) {
+        console.error('반납 신청 상세 가져오기 실패:', error);
+        if (mounted) {
+          setData(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -114,7 +61,42 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
     return () => {
       mounted = false;
     };
-  }, [itemId]);
+  }, [returnRequestId]); // 의존성도 변경
+
+  // 반납 승인 처리 함수
+  const handleApprove = async () => {
+    if (!data || !user) return;
+
+    setApproving(true);
+    try {
+      const approveData = {
+        universityId: data.universityId,
+        organizationId: data.organizationId,
+        approverUserId: parseInt(user.id), // 실제 사용자 ID 사용
+        imageKey: data.submittedImageKey,
+      };
+
+      // returnRequestId를 사용해야 함 (API 스펙의 {id}는 반납 요청 ID)
+      const response = await postRequest(
+        `/admin/return-requests/${returnRequestId}/approve`,
+        approveData
+      );
+
+      console.log('반납 승인 성공:', response);
+      // 승인 성공 후 콜백 함수 호출 (목록 새로고침)
+      if (onApproveSuccess) {
+        onApproveSuccess();
+      }
+    } catch (error: any) {
+      console.error('반납 승인 실패:', error);
+      if (error.response) {
+        console.error('에러 응답:', error.response.data);
+        console.error('에러 상태:', error.response.status);
+      }
+    } finally {
+      setApproving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -134,98 +116,194 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
   return (
     <Box display="flex" flexDirection="column" h="100%" overflow="hidden">
+      {/* 상단 헤더 */}
+      <Box
+        position="sticky"
+        top={0}
+        bg="white"
+        zIndex="docked"
+        borderBottom="1px solid"
+        borderColor="gray.200"
+        px={4}
+        py={3}
+      >
+        <HStack>
+          <Box bg="gray.100" px={3} py={1} rounded="full" fontSize="sm" color="gray.600">
+            Section 40
+          </Box>
+          <Text fontWeight="semibold" fontSize="lg">
+            물품 반납 승인
+          </Text>
+        </HStack>
+      </Box>
+
       <VStack align="stretch" gap={4} p={4} flex="1" overflowY="auto">
-        {/* 대표 사진 와이어프레임 */}
-        <WireframePhoto titleTop="반납 당시" titleBottom="사진" />
-
-        <Box bg="gray.100" w="100%" h="1px" />
-
-        <Flex justify="space-between" py={1} px={1}>
-          <Text textAlign="right" color="gray.500">
-            보증금
+        {/* 반납 당시 사진 */}
+        <Box>
+          <Text fontWeight="semibold" mb={2}>
+            반납 상태
           </Text>
-          <Text textAlign="right" fontWeight="semibold">
-            {formatKRW(data.deposit)}
-          </Text>
-        </Flex>
+          <WireframePhoto
+            titleTop="반납 당시"
+            titleBottom="사진"
+            imageUrl={data.submittedImageUrl}
+          />
+        </Box>
 
-        <SimpleGrid columns={{ base: 3, md: 3 }} gap={3}>
-          <Info label="최대 대여기간" value={`${data.maxRentalDays}일`} />
-          <Info label="보유수량" value={`${data.totalQuantity}개`} />
-          <Info label="대여가능" value={`${data.availableQuantity}개`} />
-        </SimpleGrid>
-
-        <Box bg="gray.100" w="100%" h="1px" />
-
+        {/* 이전 상태 사진 */}
         <Box>
           <Text fontWeight="semibold" mb={2}>
             반납 이전 상태
           </Text>
-          <WireframePhoto titleTop="과거" titleBottom="사진" />
+          <WireframePhoto titleTop="과거" titleBottom="사진" imageUrl={data.beforeImageUrl} />
         </Box>
 
-        <Box bg="gray.100" rounded="sm" p={3} minH="160px">
-          <Text mt={1} fontSize="sm" color="gray.600" whiteSpace="pre-line">
-            {data.description || '설명이 없습니다.'}
+        {/* AI 분석 결과 */}
+        <Box bg="gray.50" rounded="sm" p={3} minH="160px">
+          <VStack align="stretch" gap={2}>
+            <HStack justify="space-between">
+              <Text fontSize="sm">초기 상태와 비교했을 때 파손물 %</Text>
+              <Text fontSize="sm" fontWeight="bold" color="green.600">
+                11%
+              </Text>
+            </HStack>
+            <HStack justify="space-between">
+              <Text fontSize="sm">어디가 파손되어 보이는 지</Text>
+              <Text fontSize="sm" color="green.600">
+                없음
+              </Text>
+            </HStack>
+            <HStack justify="space-between">
+              <Text fontSize="sm">예상 보증금 차감액?</Text>
+              <Text fontSize="sm" color="green.600">
+                0원
+              </Text>
+            </HStack>
+            <Text fontSize="xs" color="gray.500" mt={2}>
+              (GPT 분석) 승인 버튼 클릭
+            </Text>
+          </VStack>
+        </Box>
+
+        {/* 반납 정보 */}
+        <VStack align="stretch" gap={2}>
+          <HStack justify="space-between">
+            <Text fontSize="sm" color="gray.600">
+              대여인:
+            </Text>
+            <Text fontSize="sm">사용자 {data.userId}</Text>
+          </HStack>
+          <HStack justify="space-between">
+            <Text fontSize="sm" color="gray.600">
+              반납일:
+            </Text>
+            <Text fontSize="sm">{new Date(data.requestedAt).toLocaleDateString('ko-KR')}</Text>
+          </HStack>
+          <HStack justify="space-between">
+            <Text fontSize="sm" color="gray.600">
+              돌려줄 금액:
+            </Text>
+            <Text fontSize="sm" fontWeight="bold">
+              10,000원
+            </Text>
+          </HStack>
+          <HStack justify="space-between">
+            <Text fontSize="sm" color="gray.600">
+              현재 보증금:
+            </Text>
+            <Text fontSize="sm">10,000원</Text>
+          </HStack>
+        </VStack>
+
+        {/* 보증금 반환 체크박스 */}
+        <Box>
+          <Text fontWeight="semibold" mb={2}>
+            보증금 설정
           </Text>
+          <Checkbox.Root
+            checked={refundDeposit}
+            onCheckedChange={(e) => setRefundDeposit(!!e.checked)}
+            colorPalette="blue"
+            size="md"
+          >
+            <Checkbox.HiddenInput />
+            <Checkbox.Control />
+            <Checkbox.Label>보증금을 반환한다</Checkbox.Label>
+          </Checkbox.Root>
+
+          {refundDeposit && (
+            <Box mt={3} p={3} bg="blue.50" rounded="md">
+              <Text fontSize="xs" color="blue.600">
+                보증금이 반환됩니다. 승인 처리 시 자동으로 환불됩니다.
+              </Text>
+            </Box>
+          )}
+        </Box>
+
+        {/* 승인 버튼 */}
+        <Box mt={4}>
+          <Button
+            w="100%"
+            colorScheme="blue"
+            size="lg"
+            onClick={handleApprove}
+            loading={approving}
+            loadingText="승인 중..."
+          >
+            승인하기
+          </Button>
         </Box>
       </VStack>
     </Box>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <VStack
-      align="flex-start"
-      p={3}
-      border="1px solid"
-      borderColor="gray.200"
-      rounded="md"
-      bg="white"
-      gap={1}
-    >
-      <Text fontSize="xs" color="gray.500">
-        {label}
-      </Text>
-      <Text fontWeight="semibold">{value}</Text>
-    </VStack>
-  );
-}
-
 function WireframePhoto({
   titleTop,
   titleBottom,
-  ratio = 16 / 9,
-  height = '360px',
+  imageUrl,
+  height = '200px',
 }: {
   titleTop: string;
   titleBottom?: string;
-  ratio?: number;
+  imageUrl?: string;
   height?: string | number;
 }) {
   return (
     <Box>
-      <AspectRatio ratio={ratio} w="100%" h={height}>
-        <VStack
-          border="2px dashed"
-          borderColor="gray.300"
-          rounded="md"
-          bg="gray.50"
-          align="center"
-          justify="center"
-          gap={1}
-        >
-          <Text fontSize="xl" fontWeight="bold" color="gray.700">
-            {titleTop}
-          </Text>
-          {titleBottom && (
+      <Box
+        w="100%"
+        h={height}
+        border="1px solid"
+        borderColor="gray.300"
+        rounded="lg"
+        overflow="hidden"
+        position="relative"
+      >
+        {imageUrl ? (
+          <Image src={imageUrl} alt={titleTop} w="100%" h="100%" objectFit="cover" />
+        ) : (
+          <VStack
+            border="2px dashed"
+            borderColor="gray.300"
+            rounded="md"
+            bg="gray.50"
+            align="center"
+            justify="center"
+            gap={1}
+            h="100%"
+          >
             <Text fontSize="xl" fontWeight="bold" color="gray.700">
-              {titleBottom}
+              {titleTop}
             </Text>
-          )}
-        </VStack>
-      </AspectRatio>
+            {titleBottom && (
+              <Text fontSize="xl" fontWeight="bold" color="gray.700">
+                {titleBottom}
+              </Text>
+            )}
+          </VStack>
+        )}
+      </Box>
     </Box>
   );
 }

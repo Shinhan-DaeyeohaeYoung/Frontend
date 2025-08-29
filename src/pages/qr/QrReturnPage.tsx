@@ -1,15 +1,13 @@
-import { Box, Text, VStack, Flex, Image, Badge } from '@chakra-ui/react';
+import { Box, Text, VStack, Flex, Image, Badge, HStack } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
-import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/Card';
-import { SearchInput } from '@/components/Input';
 import { useModalStore } from '@/stores/modalStore';
 import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ReturnModal } from './components/ReturnModal';
 import { useAuthStore } from '@/stores/authStore';
+import { createHandleOpenModal } from './components/ReturnModal';
 
 // QR 토큰 검증 응답 타입
 interface QRTokenResponse {
@@ -20,36 +18,52 @@ interface QRTokenResponse {
   expiresAt: string;
 }
 
-//   availableQuantity < totalQuantity면 대여가능
-// countWaitList < totalQuantity면 대기열 가능
-// countWaitList >= totalQuantity면 대기열 불가능
+// 대여 중인 물품 타입 정의
+interface RentalItem {
+  id: number;
+  universityId: number;
+  organizationId: number;
+  userId: number;
+  itemId: number;
+  individualItemId: number;
+  quantity: number;
+  rentedAt: string;
+  dueAt: string;
+  returnedAt: string | null;
+  status: string;
+  depositId: number | null;
+}
 
-interface ApiResponse<T> {
-  content: T[];
+// 대여 목록 응답 타입
+interface RentalListResponse {
+  content: RentalItem[];
   page: number;
   size: number;
   totalElements: number;
 }
 
-// 아이템 타입 정의
-export interface Item {
+// 물품 사진 타입 정의
+interface ItemPhoto {
   id: number;
-  universityId: number;
-  organizationId: number;
+  key: string;
+  imageUrl: string;
+  mime: string | null;
+  hash: string | null;
+  takenAt: string | null;
+}
+
+// 물품 정보 타입 정의
+interface ItemInfo {
+  id: number;
   name: string;
-  totalQuantity: number;
-  availableQuantity: number;
-  isActive: boolean;
-  coverKey: string;
   description: string;
-  countWaitList: number;
+  coverKey: string;
 }
 
 export default function QrReturnPage() {
   const navigate = useNavigate();
-  const { openModal, closeModal } = useModalStore();
-  const { user } = useAuthStore();
   const [searchParams] = useSearchParams();
+  const { openModal, closeModal } = useModalStore();
 
   // URL에서 토큰 추출
   const token = searchParams.get('token');
@@ -60,7 +74,11 @@ export default function QrReturnPage() {
   const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
   const [tokenError, setTokenError] = useState<string>('');
 
-  // QR 토큰 검증 함수
+  // 대여 중인 물품 목록 상태
+  const [rentalItems, setRentalItems] = useState<RentalItem[]>([]);
+  const [isLoadingRentals, setIsLoadingRentals] = useState<boolean>(false);
+
+  // QR 토큰 검증 함수 수정
   const validateQRToken = async (token: string) => {
     try {
       setIsLoadingToken(true);
@@ -71,17 +89,50 @@ export default function QrReturnPage() {
       });
 
       if (response) {
+        // 🔒 중요: QR 토큰의 organizationId와 사용자 소속 조직 비교
+        const { user } = useAuthStore.getState(); // 컴포넌트 외부에서 store 접근
+
+        if (!user) {
+          setTokenError('사용자 정보를 찾을 수 없습니다.');
+          return;
+        }
+
+        // 사용자의 소속 조직 정보 확인
+        const userUniversityId = user.organizationInfo?.university?.id;
+        const userCollegeId = user.organizationInfo?.college?.id;
+        const userDepartmentId = user.organizationInfo?.department?.id;
+
+        // QR 토큰의 organizationId가 사용자 소속 조직 중 하나와 일치하는지 확인
+        const isAuthorized =
+          response.organizationId === userUniversityId ||
+          response.organizationId === userCollegeId ||
+          response.organizationId === userDepartmentId;
+
+        if (!isAuthorized) {
+          setTokenError(
+            '해당 조직의 반납 권한이 없습니다. 본인 소속 조직의 QR만 스캔할 수 있습니다.'
+          );
+          setIsTokenValid(false);
+          return;
+        }
+
+        // 권한 확인 성공
         setQrTokenData(response);
         setIsTokenValid(true);
-        console.log('QR 토큰 검증 성공:', response);
+        console.log('QR 토큰 검증 및 권한 확인 성공:', response);
+
+        // 토큰 검증 성공 후 대여 목록 가져오기
+        await fetchRentalItems(response.organizationId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QR 토큰 검증 실패:', error);
       setIsTokenValid(false);
 
-      if (error.response?.status === 400) {
+      const axiosError = error as { response?: { status?: number } };
+
+      if (axiosError.response?.status === 400) {
         setTokenError('토큰이 누락되었거나 형식이 잘못되었습니다.');
-      } else if (error.response?.status === 401) {
+      } else if (axiosError.response?.status === 401) {
         setTokenError('토큰이 만료되었거나 유효하지 않습니다.');
       } else {
         setTokenError('토큰 검증 중 오류가 발생했습니다.');
@@ -89,6 +140,62 @@ export default function QrReturnPage() {
     } finally {
       setIsLoadingToken(false);
     }
+  };
+
+  // 대여 중인 물품 목록 가져오기
+  const fetchRentalItems = async (organizationId: number) => {
+    try {
+      setIsLoadingRentals(true);
+
+      const response = await getRequest<RentalListResponse>(
+        `/rentals/organizations/${organizationId}`
+      );
+
+      if (response && response.content) {
+        // RENTED 상태이고 반납되지 않은 물품만 필터링
+        const activeRentals = response.content.filter(
+          (item) => item.status === 'RENTED' && !item.returnedAt
+        );
+
+        setRentalItems(activeRentals);
+        console.log('대여 중인 물품:', activeRentals);
+      }
+    } catch (error) {
+      console.error('대여 목록 가져오기 실패:', error);
+      setRentalItems([]);
+    } finally {
+      setIsLoadingRentals(false);
+    }
+  };
+
+  // 물품 사진 가져오기
+  const getItemPhoto = async (itemId: number, assetNo: string): Promise<string | null> => {
+    try {
+      const response = await getRequest<ItemPhoto>(`/items/${itemId}/units/${assetNo}/photo`);
+      return response?.imageUrl || null;
+    } catch (error) {
+      console.error('물품 사진 가져오기 실패:', error);
+      return null;
+    }
+  };
+
+  // ReturnModal 직접 렌더링 제거
+  // <ReturnModal /> 삭제
+
+  // handleOpenReturnModal 함수 생성
+  const handleOpenReturnModal = createHandleOpenModal(openModal, closeModal);
+
+  // 반납 신청 처리 함수에서 모달 열기
+  const handleReturnRequest = (rentalItem: RentalItem) => {
+    // ReturnModal에 필요한 모든 정보 전달
+    handleOpenReturnModal({
+      id: rentalItem.itemId,
+      name: `물품 ID: ${rentalItem.itemId}`,
+      rentalId: rentalItem.id,
+      universityId: rentalItem.universityId, // ✅ 추가됨
+      organizationId: rentalItem.organizationId, // ✅ 추가됨
+      userId: rentalItem.userId, // ✅ 추가됨
+    });
   };
 
   // 컴포넌트 마운트 시 토큰 검증
@@ -99,167 +206,6 @@ export default function QrReturnPage() {
       setTokenError('QR 토큰이 없습니다.');
     }
   }, [token]);
-
-  const [data, setData] = useState<Item[]>([]);
-
-  const basicOptions: SegmentOption[] = [
-    { value: 'all', label: '전체' },
-    { value: 'school', label: '학교' },
-    { value: 'middle', label: '총학' },
-    { value: 'subject', label: '학과' },
-  ];
-
-  const [selectedValue, setSelectedValue] = useState(basicOptions[0].value);
-
-  // 풀스크린 모달을 여는 함수
-  const handleOpenModal = (item: Item) => {
-    // 실제 값들로 대체해야 함
-    const userId = 2;
-
-    openModal({
-      body: (
-        <ReturnModal
-          item={item}
-          userId={Number(user.id)}
-          onClose={() => {
-            // 모달 닫기 로직
-            closeModal();
-          }}
-        />
-      ),
-      fullscreen: true,
-    });
-  };
-
-  const handleResultModal = (item: Item) => {
-    openModal({
-      title: '대여가 완료되었습니다.',
-      caption:
-        '지정된 기간 안에 물품을 반납해주세요! 파손되거나 연체되는 경우 보증금 환불이 불가할 수 있습니다.',
-      footer: (
-        <Button
-          w="full"
-          onClick={() => {
-            navigate('/rent');
-          }}
-          label="홈으로 가기"
-        ></Button>
-      ),
-    });
-  };
-
-  const fetchListData = async () => {
-    try {
-      // authStore에서 organizationId 가져오기 - 모든 조직 확인
-      let currentOrganizationId: number | undefined;
-
-      console.log('현재 사용자 정보:', user);
-      console.log('사용자 admin 권한:', user?.admin);
-      console.log('조직 정보:', user?.organizationInfo);
-
-      // 모든 가능한 조직 ID 확인
-      const universityId = user?.organizationInfo?.university?.id;
-      const collegeId = user?.organizationInfo?.college?.id;
-      const departmentId = user?.organizationInfo?.department?.id;
-
-      console.log('가능한 조직 ID들:', { universityId, collegeId, departmentId });
-
-      // admin 권한에 따라 조직 ID 선택
-      if (user?.admin === 'university' && universityId) {
-        currentOrganizationId = universityId;
-        console.log('대학교 관리자로 설정됨:', currentOrganizationId);
-      } else if (user?.admin === 'college' && collegeId) {
-        currentOrganizationId = collegeId;
-        console.log('총학생회 관리자로 설정됨:', currentOrganizationId);
-      } else if (user?.admin === 'department' && departmentId) {
-        currentOrganizationId = departmentId;
-        console.log('학과 관리자로 설정됨:', currentOrganizationId);
-      } else {
-        // admin이 none이거나 조직 정보가 없는 경우, 첫 번째로 사용 가능한 조직 ID 사용
-        currentOrganizationId = universityId || collegeId || departmentId;
-        console.log('기본 조직 ID 사용:', currentOrganizationId);
-      }
-
-      if (!currentOrganizationId) {
-        console.error('조직 ID를 찾을 수 없습니다. 사용자 정보:', user);
-        setTokenError('사용자 조직 정보를 찾을 수 없습니다.');
-        return;
-      }
-
-      console.log('최종 선택된 조직 ID:', currentOrganizationId);
-
-      // [todo] api 수정GET/api/rental-requests/{organizationId}/holding
-      // 내 홀딩 예약 중 특정 조직의 것만
-      const res = await getRequest<ApiResponse<Item>>(
-        `http://43.200.61.108:8082/api/rental-requests/${currentOrganizationId}/holding`
-      );
-
-      // setData(res?.content);
-      const dummyContent = [
-        {
-          rentalId: 0,
-          unitId: 0,
-          assetNo: 'string',
-          unitStatus: 'string',
-          itemId: 0,
-          description: 'string',
-          universityId: 0,
-          organizationId: currentOrganizationId,
-          photos: [
-            {
-              assetNo: 'string',
-              key: 'string',
-              imageUrl: 'string',
-            },
-          ],
-        },
-      ];
-      setData(dummyContent);
-
-      if (dummyContent.length == 0) {
-        // if (res?.content.length == 0) {
-        openModal({
-          title: '대여할 수 있는 물품이 없어요',
-          caption: '대여하기 버튼을 누른 후 QR을 스캔해주세요',
-          body: (
-            <Button
-              w="full"
-              onClick={() => {
-                navigate('/rent');
-              }}
-              label="홈으로 가기"
-            ></Button>
-          ),
-        });
-      } else {
-        // [todo] 한 개일 때 분기처리
-        console.log('데이터가 있습니다:', dummyContent.length);
-      }
-      console.log(res);
-    } catch (error) {
-      console.error('데이터 가져오기 실패:', error);
-    }
-  };
-
-  const handleBook = (itemId: number) => {
-    // api 요청
-    try {
-      const request = async () => {
-        // [todo] api 수정
-        const res = await postRequest(`http://43.200.61.108:8082/api/waitlists/items/${itemId}`);
-        alert('완료!');
-        closeModal();
-        fetchListData();
-      };
-      request();
-    } catch {}
-  };
-
-  useEffect(() => {
-    try {
-      fetchListData();
-    } catch {}
-  }, [selectedValue]);
 
   // QR 토큰 정보 표시 컴포넌트
   const renderQRTokenInfo = () => {
@@ -323,29 +269,11 @@ export default function QrReturnPage() {
                   <Text color="gray.600">{qrTokenData.organizationId}</Text>
                 </Flex>
 
-                <Flex justify="space-between" align="center">
-                  <Text fontWeight="bold" color="gray.700">
-                    발급 시간:
-                  </Text>
-                  <Text color="gray.600" fontSize="sm">
-                    {new Date(qrTokenData.issuedAt).toLocaleString('ko-KR')}
-                  </Text>
-                </Flex>
-
-                <Flex justify="space-between" align="center">
-                  <Text fontWeight="bold" color="gray.700">
-                    만료 시간:
-                  </Text>
-                  <Text color="gray.600" fontSize="sm">
-                    {new Date(qrTokenData.expiresAt).toLocaleString('ko-KR')}
-                  </Text>
-                </Flex>
+                <Text fontSize="sm" color="green.600" textAlign="center">
+                  🎯 반납할 물품을 선택해주세요!
+                </Text>
               </VStack>
             </Box>
-
-            <Text fontSize="sm" color="green.600" textAlign="center">
-              🎯 이제 반납할 물품을 선택해주세요!
-            </Text>
           </VStack>
         </Box>
       );
@@ -354,46 +282,89 @@ export default function QrReturnPage() {
     return null;
   };
 
+  // 대여 중인 물품 목록 렌더링
+  const renderRentalItems = () => {
+    if (isLoadingRentals) {
+      return (
+        <Box bg="blue.50" p={4} borderRadius="md" mb={4}>
+          <Text color="blue.600" fontWeight="bold">
+            🔍 대여 목록을 불러오는 중...
+          </Text>
+        </Box>
+      );
+    }
+
+    if (rentalItems.length === 0) {
+      return (
+        <Box bg="yellow.50" p={6} borderRadius="xl" mb={6} textAlign="center">
+          <Text fontSize="lg" color="yellow.700" fontWeight="bold">
+            📦 반납할 물품이 없습니다
+          </Text>
+          <Text color="yellow.600" mt={2}>
+            현재 대여 중인 물품이 없거나 모든 물품이 반납되었습니다.
+          </Text>
+          <Button mt={4} onClick={() => navigate('/main')} label="홈으로 가기" />
+        </Box>
+      );
+    }
+
+    return (
+      <VStack gap={4} align="stretch">
+        <Text fontSize="lg" fontWeight="bold" color="gray.700">
+          반납할 물품 목록 ({rentalItems.length}개)
+        </Text>
+
+        {rentalItems.map((item) => (
+          <Card
+            key={item.id}
+            image={
+              <Image
+                src="/placeholder-image.jpg"
+                alt="물품 이미지"
+                fallbackSrc="/placeholder-image.jpg"
+              />
+            }
+            title={`물품 ID: ${item.itemId}`}
+            subtitle={`개별 ID: ${item.individualItemId}`}
+            bottomExtra={
+              <VStack gap={3} align="stretch">
+                <HStack justify="space-between" fontSize="sm" color="gray.600">
+                  <Text>대여일:</Text>
+                  <Text>{new Date(item.rentedAt).toLocaleDateString('ko-KR')}</Text>
+                </HStack>
+                <HStack justify="space-between" fontSize="sm" color="gray.600">
+                  <Text>반납예정일:</Text>
+                  <Text>{new Date(item.dueAt).toLocaleDateString('ko-KR')}</Text>
+                </HStack>
+                <Button
+                  w="full"
+                  size="sm"
+                  label="반납 신청하기"
+                  onClick={() => handleReturnRequest(item)}
+                />
+              </VStack>
+            }
+          />
+        ))}
+      </VStack>
+    );
+  };
+
   return (
     <Box px={10}>
       <PageHeader
         px={0}
         py={10}
         bgColor={'transparent'}
-        title={'반납하기'}
-        subtitle={'사무실에서 대여한 물품 중 반납하려는 물품을 선택해주세요!'}
-      ></PageHeader>
+        title={'반납해요'}
+        subtitle={'반납하실 물품을 선택해주세요! \n 반납가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
+      />
 
       {/* QR 토큰 정보 표시 */}
       {renderQRTokenInfo()}
 
-      <VStack gap={2} align="stretch" mt={2}>
-        {data.map((el) => {
-          return (
-            <Card
-              image={<Image src={`${el?.coverKey}`} />}
-              title={el?.name}
-              subtitle={el?.description}
-              bottomExtra={
-                <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
-                  <Button
-                    ml="auto"
-                    size="sm"
-                    label={'반납하기'}
-                    onClick={() => {
-                      //   if (canRent) {
-                      handleOpenModal(el);
-                      //   } else if (canBook) {
-                      //     handleOpenBookModal(el);
-                      //   }
-                    }}
-                  ></Button>
-                </Flex>
-              }
-            ></Card>
-          );
-        })}
-      </VStack>
+      {/* 대여 중인 물품 목록 표시 */}
+      {isTokenValid && renderRentalItems()}
     </Box>
   );
 }

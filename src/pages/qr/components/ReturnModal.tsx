@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Box, Button, Text, VStack, HStack, Input } from '@chakra-ui/react';
 import { getRequest, postRequest } from '@/api/requests';
 
@@ -38,6 +38,16 @@ interface ReturnModalProps {
   organizationId: number;
   onClose: () => void;
 }
+
+// 이미지 상태 타입 정의
+type ImageLike = {
+  id: string;
+  file: File;
+  url: string;
+  uploadStatus: 'pending' | 'uploading' | 'success' | 'error';
+  s3Key?: string;
+  errorMessage?: string;
+};
 
 // 파일 해시 생성 함수
 const generateFileHash = async (file: File): Promise<string> => {
@@ -85,13 +95,21 @@ const submitReturnRequest = async (data: ReturnRequestData): Promise<void> => {
 };
 
 const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<ImageLike | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // 메모리 누수 방지: URL revoke
+  useEffect(() => {
+    return () => {
+      if (selectedImage) {
+        URL.revokeObjectURL(selectedImage.url);
+      }
+    };
+  }, [selectedImage]);
+
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // 이미지 파일인지 확인
@@ -106,26 +124,96 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
         return;
       }
 
-      setSelectedImage(file);
       setError(null);
 
-      // 이미지 미리보기 생성
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+      // 새로운 이미지 객체 생성
+      const newImage: ImageLike = {
+        id: crypto.randomUUID(),
+        file,
+        url: URL.createObjectURL(file),
+        uploadStatus: 'pending',
       };
-      reader.readAsDataURL(file);
+
+      setSelectedImage(newImage);
+
+      // 즉시 S3 업로드 시작
+      try {
+        // 1. Presigned URL 발급
+        console.log('Presigned URL 요청 데이터:', {
+          imageType: 'ITEM',
+          fileName: file.name,
+        });
+
+        const presignedResponse = await postRequest<PresignedUrlResponse>(
+          '/images/presign/upload',
+          {
+            imageType: 'ITEM',
+            fileName: file.name,
+          }
+        );
+
+        console.log('Presigned URL 응답:', presignedResponse);
+
+        // 2. S3에 직접 업로드 (fetch 사용)
+        console.log('S3 업로드 요청 시작:', presignedResponse.url);
+        const uploadResponse = await fetch(presignedResponse.url, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+        console.log('S3 업로드 응답:', uploadResponse);
+
+        if (uploadResponse.ok) {
+          // 업로드 성공
+          console.log('S3 업로드 성공!');
+          setSelectedImage((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  uploadStatus: 'success',
+                  s3Key: presignedResponse.key,
+                }
+              : null
+          );
+        } else {
+          // 업로드 실패
+          console.error('S3 업로드 실패:', uploadResponse.status);
+          setSelectedImage((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  uploadStatus: 'error',
+                  errorMessage: 'S3 업로드에 실패했습니다.',
+                }
+              : null
+          );
+          setError('이미지 업로드에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('S3 업로드 중 오류:', error);
+        setSelectedImage((prev) =>
+          prev
+            ? {
+                ...prev,
+                uploadStatus: 'error',
+                errorMessage: '업로드 중 오류가 발생했습니다.',
+              }
+            : null
+        );
+        setError('이미지 업로드 중 오류가 발생했습니다.');
+      }
     }
   };
 
   const handleCameraCapture = () => {
-    // 카메라 캡처 버튼 클릭 시 파일 선택 다이얼로그 열기
     fileInputRef.current?.click();
   };
 
   const handleSubmit = async () => {
-    if (!selectedImage) {
-      setError('사진을 첨부해주세요.');
+    if (!selectedImage || selectedImage.uploadStatus !== 'success' || !selectedImage.s3Key) {
+      setError('사진을 첨부하고 업로드가 완료되어야 합니다.');
       return;
     }
 
@@ -133,35 +221,20 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
     setError(null);
 
     try {
-      console.log(item);
-      //   return;
-      // 1. Presigned URL 발급
-      console.log('Presigned URL 발급 중...');
-      const { key, url } = await getPresignedUrl(selectedImage.name);
-
-      // 2. 이미지 업로드
-      //   console.log('이미지 업로드 중...');
-      //   await uploadImage(selectedImage, url);
-
-      // 3. 파일 해시 생성
-      //   console.log('파일 해시 생성 중...');
-      //   const imageHash = await generateFileHash(selectedImage);
-
       console.log('반납 신청 데이터 준비...');
-      // 4. 반납 신청 데이터 준비
 
       const returnRequestData: ReturnRequestData = {
         universityId: item.universityId,
         organizationId: item.organizationId,
         userId: userId,
         rentalId: item.rentalId,
-        imageKey: key, // presigned URL 응답에서 받은 key 사용
-        // imageMime: selectedImage.type,
-        // imageHash,
-        // imageTakenAt: new Date().toISOString(),
+        imageKey: selectedImage.s3Key, // S3에 업로드된 이미지 키 사용
+        imageMime: selectedImage.file.type,
+        imageHash: '', // 필요시 해시 생성
+        imageTakenAt: new Date().toISOString(),
       };
 
-      // 5. 반납 신청 제출
+      // 반납 신청 제출
       console.log('반납 신청 제출 중...');
       await submitReturnRequest(returnRequestData);
 
@@ -212,7 +285,7 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
           alignItems="center"
           position="relative"
         >
-          {imagePreview ? (
+          {selectedImage ? (
             <>
               <Box
                 w="200px"
@@ -222,9 +295,10 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
                 rounded="md"
                 overflow="hidden"
                 mb={4}
+                position="relative"
               >
                 <img
-                  src={imagePreview}
+                  src={selectedImage.url}
                   alt="선택된 이미지"
                   style={{
                     width: '100%',
@@ -232,10 +306,75 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
                     objectFit: 'cover',
                   }}
                 />
+
+                {/* 업로드 상태 표시 */}
+                {selectedImage.uploadStatus === 'uploading' && (
+                  <Box
+                    position="absolute"
+                    top="50%"
+                    left="50%"
+                    transform="translate(-50%, -50%)"
+                    bg="rgba(0,0,0,0.7)"
+                    color="white"
+                    px={3}
+                    py={1}
+                    borderRadius="md"
+                    fontSize="sm"
+                  >
+                    업로드 중...
+                  </Box>
+                )}
+
+                {selectedImage.uploadStatus === 'success' && (
+                  <Box
+                    position="absolute"
+                    top={2}
+                    right={2}
+                    bg="green.500"
+                    color="white"
+                    px={2}
+                    py={1}
+                    borderRadius="full"
+                    fontSize="xs"
+                  >
+                    ✓
+                  </Box>
+                )}
+
+                {selectedImage.uploadStatus === 'error' && (
+                  <Box
+                    position="absolute"
+                    top={2}
+                    right={2}
+                    bg="red.500"
+                    color="white"
+                    px={2}
+                    py={1}
+                    borderRadius="full"
+                    fontSize="xs"
+                  >
+                    ✗
+                  </Box>
+                )}
               </Box>
-              <Button size="sm" variant="outline" onClick={handleCameraCapture}>
-                다른 사진 선택
-              </Button>
+
+              <VStack gap={2}>
+                {selectedImage.uploadStatus === 'success' && (
+                  <Text color="green.600" fontSize="sm">
+                    ✅ 이미지 업로드 완료
+                  </Text>
+                )}
+
+                {selectedImage.uploadStatus === 'error' && (
+                  <Text color="red.600" fontSize="sm">
+                    ❌ 업로드 실패: {selectedImage.errorMessage}
+                  </Text>
+                )}
+
+                <Button size="sm" variant="outline" onClick={handleCameraCapture}>
+                  다른 사진 선택
+                </Button>
+              </VStack>
             </>
           ) : (
             <VStack>
@@ -260,7 +399,6 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment" // 모바일에서 카메라 우선
           onChange={handleImageSelect}
           display="none"
         />
@@ -297,7 +435,7 @@ const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
           colorScheme="blue"
           size="lg"
           onClick={handleSubmit}
-          disabled={!selectedImage}
+          disabled={!selectedImage || selectedImage.uploadStatus !== 'success'}
           loading={isSubmitting}
           loadingText="신청 중..."
           mt={2}
