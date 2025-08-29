@@ -76,7 +76,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
 
   const {
     isModalOpen,
@@ -89,16 +88,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
   } = useModalStore();
 
   // 인증 상태 가져오기
-  const { user, isAuthenticated } = useAuthStore();
+  const { user } = useAuthStore();
 
   // 사이드메뉴 상태
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
   // 현재 경로에 따른 헤더 프레임 결정
   const headerFrame = getHeaderFrame(pathname);
-
-  // 관리자 여부 확인 (admin이 'none'이 아닌 경우)
-  const isAdmin = user?.admin && user.admin !== 'none';
 
   // SideMenu 메뉴 항목들 정의
   const userMenuItems = [

@@ -1,94 +1,121 @@
-// src/pages/rent/RentPage.tsx
+// src/pages/admin/AdminUnitOverviewPage.tsx
 import { Box, Text, VStack } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card } from '@/components/Card';
-import { Tag } from '@/components/Tag'; // 새로 만든 Tag 불러오기
+import { Tag } from '@/components/Tag';
+import { getRequest } from '@/api/requests';
+import { useParams } from 'react-router-dom';
+import { Button } from '@/components/Button';
 
-type UnitStatus = 'RENTED' | 'AVAILABLE';
+type Unit = {
+  id: number;
+  itemId: number;
+  status: string;
+  assetNo: string;
+  currentRental?: {
+    rentalId: number;
+    userId: number;
+    dueAt: string;
+  };
+};
 
-type RentUnit = {
+type Photo = {
+  assetNo: string;
+  key: string;
+  imageUrl: string;
+};
+
+type AdminItemDetail = {
   id: number;
   universityId: number;
   organizationId: number;
   name: string;
-  submitter: string;
-  submissionNumber: string;
-  category: string;
-  status: UnitStatus;
-  overdueDays: number | null;
-  coverKey: string;
-  startDate?: string;
-  endDate?: string;
+  description: string;
+  deposit: number;
+  maxRentalDays: number;
+  totalQuantity: number;
+  availableQuantity: number;
+  countWaitList: number;
+  isActive: boolean;
+  unitStats: Record<string, number>;
+  photos: Photo[];
+  units: {
+    content: Unit[];
+    page: number;
+    size: number;
+    totalElements: number;
+  };
 };
 
-export default function RentPage() {
-  const response = {
-    content: [
-      {
-        id: 1,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '길태은(1335841)',
-        submissionNumber: '250821',
-        category: '3번 충전기',
-        status: 'RENTED' as UnitStatus,
-        overdueDays: 7,
-        coverKey: 'univ/1/items/1/units/501.jpg',
-      },
-      {
-        id: 2,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '신승용(1335874)',
-        submissionNumber: '250821',
-        category: '4번 충전기',
-        status: 'RENTED' as UnitStatus,
-        overdueDays: null,
-        coverKey: 'univ/1/items/1/units/502.jpg',
-      },
-      {
-        id: 3,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '이지혜(13302156)',
-        submissionNumber: '250821',
-        category: '5번 충전기',
-        status: 'AVAILABLE' as UnitStatus,
-        overdueDays: null,
-        coverKey: 'univ/1/items/1/units/503.jpg',
-      },
-      {
-        id: 4,
-        universityId: 1,
-        organizationId: 2,
-        name: '사진',
-        submitter: '홍길동(1330000)',
-        submissionNumber: '250821',
-        category: '6번 충전기',
-        status: 'AVAILABLE' as UnitStatus,
-        overdueDays: null,
-        coverKey: 'univ/1/items/1/units/504.jpg',
-      },
-    ],
+export default function AdminUnitOverviewPage() {
+  const { itemId } = useParams<{ itemId: string }>();
+  const [itemDetail, setItemDetail] = useState<AdminItemDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // API 호출 함수
+  const fetchItemDetail = async () => {
+    if (!itemId) return;
+
+    try {
+      setLoading(true);
+
+      const data: AdminItemDetail = await getRequest<AdminItemDetail>(
+        `/admin/items/${itemId}?page=0&size=20&sort=id,asc`
+      );
+
+      setItemDetail(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '아이템 상세 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const withDates: RentUnit[] = response.content.map((u) => ({
-    ...u,
-    startDate: '250820',
-    endDate: u.submissionNumber ?? '250821',
-  }));
-
-  const [data] = useState<RentUnit[]>(withDates);
+  useEffect(() => {
+    fetchItemDetail();
+  }, [itemId]);
 
   const { availableCount, totalCount } = useMemo(() => {
-    const rented = data.filter((d) => d.status === 'RENTED').length;
-    const available = data.filter((d) => d.status === 'AVAILABLE').length;
-    return { availableCount: available, rentedCount: rented, totalCount: data.length };
-  }, [data]);
+    if (!itemDetail) return { availableCount: 0, totalCount: 0 };
+
+    const units = itemDetail.units.content;
+    const rented = units.filter((d) => d.status === 'RENTED').length;
+    const available = units.filter((d) => d.status === 'AVAILABLE').length;
+    return { availableCount: available, rentedCount: rented, totalCount: units.length };
+  }, [itemDetail]);
+
+  if (loading) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor="transparent"
+          title="로딩 중..."
+          subtitle="데이터를 불러오는 중입니다."
+        />
+        <Text>로딩 중...</Text>
+      </Box>
+    );
+  }
+
+  if (error || !itemDetail) {
+    return (
+      <Box px={10}>
+        <PageHeader
+          px={0}
+          py={10}
+          bgColor="transparent"
+          title="오류 발생"
+          subtitle="데이터를 불러올 수 없습니다."
+        />
+        <Text color="red.500">오류: {error}</Text>
+        <Button label="다시 시도" onClick={fetchItemDetail} mt={4} />
+      </Box>
+    );
+  }
 
   return (
     <Box px={10}>
@@ -96,38 +123,64 @@ export default function RentPage() {
         px={0}
         py={10}
         bgColor="transparent"
-        title="{물품명} 대여 현황"
+        title={`${itemDetail.name} 대여 현황`}
         subtitle="물품 개체들을 확인하고 관리할 수 있습니다."
       />
+
+      {/* 아이템 기본 정보 */}
+      <Box mb={6} p={4} bg="gray.50" borderRadius="md">
+        <Text fontSize="lg" fontWeight="bold" mb={2}>
+          아이템 정보
+        </Text>
+        <Text fontSize="sm" color="gray.700" mb={1}>
+          설명: {itemDetail.description}
+        </Text>
+        <Text fontSize="sm" color="gray.700" mb={1}>
+          총 수량: {itemDetail.totalQuantity}개 | 대여 가능: {itemDetail.availableQuantity}개
+        </Text>
+        <Text fontSize="sm" color="gray.700" mb={1}>
+          보증금: {itemDetail.deposit}원 | 최대 대여 기간: {itemDetail.maxRentalDays}일
+        </Text>
+        {itemDetail.countWaitList > 0 && (
+          <Text fontSize="sm" color="orange.500">
+            대기자: {itemDetail.countWaitList}명
+          </Text>
+        )}
+      </Box>
 
       <Text fontSize="sm" color="gray.700" mt={-2} mb={2}>
         대여 가능, 대여 중 물품 개수: {availableCount}개 / {totalCount}개
       </Text>
 
       <VStack gap={3} align="stretch" mt={2}>
-        {data.map((el) => {
-          const isRented = el.status === 'RENTED';
+        {itemDetail.units.content.map((unit) => {
+          const isRented = unit.status === 'RENTED';
+          const isAvailable = unit.status === 'AVAILABLE';
 
           return (
             <Card
-              key={el.id}
+              key={unit.id}
               image={
                 <Text fontSize="4xl" fontWeight="bold" color="gray.500" lineHeight="80px">
-                  {el.name}
+                  {unit.assetNo}
                 </Text>
               }
               title={'물품번호'}
               extra={
                 isRented ? (
                   <Tag label="대여 중" variant="error" />
-                ) : (
+                ) : isAvailable ? (
                   <Tag label="대여 가능" variant="default" />
-                )
+                ) : null // 다른 상태값이면 태그 표시 안함
               }
               subtitle={
-                isRented
-                  ? `대여한 사람 : ${el.submitter}\n대여 기간: ${el.startDate} ~ ${el.endDate}`
-                  : `사람 : ${el.submitter}`
+                isRented && unit.currentRental
+                  ? `대여 ID: ${unit.currentRental.rentalId}\n만료일: ${new Date(
+                      unit.currentRental.dueAt
+                    ).toLocaleDateString()}`
+                  : isAvailable
+                  ? `대여 가능한 상태입니다`
+                  : `상태: ${unit.status}` // 다른 상태값이면 해당 상태를 표시
               }
             />
           );
