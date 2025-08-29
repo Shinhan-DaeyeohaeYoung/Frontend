@@ -84,13 +84,7 @@ const submitReturnRequest = async (data: ReturnRequestData): Promise<void> => {
   await postRequest<void, ReturnRequestData>('/return-requests', data);
 };
 
-const ReturnModal: React.FC<ReturnModalProps> = ({
-  item,
-  userId,
-  universityId,
-  organizationId,
-  onClose,
-}) => {
+const ReturnModal: React.FC<ReturnModalProps> = ({ item, userId, onClose }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,7 +153,7 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
       const returnRequestData: ReturnRequestData = {
         universityId: item.universityId,
         organizationId: item.organizationId,
-        userId: userId, // [todo]: authStore
+        userId: userId,
         rentalId: item.rentalId,
         imageKey: key, // presigned URL 응답에서 받은 key 사용
         // imageMime: selectedImage.type,
@@ -319,7 +313,6 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
 const createHandleOpenModal = (openModal: any, closeModal: any) => {
   return (item: Item) => {
     // 실제 값들로 대체해야 함 - 현재 사용자 정보나 URL 파라미터에서 가져와야 함
-    const userId = 2; // getCurrentUserId() 등으로 대체
     const universityId = 1; // getCurrentUniversityId() 등으로 대체
     const organizationId = 2; // URL 파라미터나 상태에서 가져와야 함
 
@@ -327,9 +320,9 @@ const createHandleOpenModal = (openModal: any, closeModal: any) => {
       body: (
         <ReturnModal
           item={item}
-          userId={userId}
-          universityId={universityId}
-          organizationId={organizationId}
+          //   userId={userId}
+          //   universityId={universityId}
+          //   organizationId={organizationId}
           onClose={closeModal}
         />
       ),

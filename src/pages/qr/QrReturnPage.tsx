@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
 import { useNavigate } from 'react-router-dom';
 import { ReturnModal } from './components/ReturnModal';
+import { useAuthStore } from '@/stores/authStore';
 
 //   availableQuantity < totalQuantity면 대여가능
 // countWaitList < totalQuantity면 대기열 가능
@@ -39,6 +40,8 @@ export default function QrReturnPage() {
   const navigate = useNavigate();
   const { openModal, closeModal } = useModalStore();
 
+  const { user } = useAuthStore();
+
   const [data, setData] = useState<Item[]>([]);
 
   const basicOptions: SegmentOption[] = [
@@ -54,16 +57,12 @@ export default function QrReturnPage() {
   const handleOpenModal = (item: Item) => {
     // 실제 값들로 대체해야 함
     const userId = 2;
-    const universityId = 1;
-    const organizationId = 1;
 
     openModal({
       body: (
         <ReturnModal
           item={item}
-          userId={userId}
-          universityId={universityId}
-          organizationId={organizationId}
+          userId={Number(user.id)}
           onClose={() => {
             // 모달 닫기 로직
             closeModal();
