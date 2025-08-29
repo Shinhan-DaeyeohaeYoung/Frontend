@@ -1,9 +1,7 @@
 import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
-import { SegmentButtonGroup, type SegmentOption } from '@/components/SegmentButtonGroup';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/Card';
-import { SearchInput } from '@/components/Input';
 import { useModalStore } from '@/stores/modalStore';
 import ItemDetailModalContent from './components/ItemDetailModalContent';
 import { Button } from '@/components/Button';
@@ -35,66 +33,9 @@ export interface Item {
 }
 
 export default function RentPage() {
-  const dummyContent =
-    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
-  // const response = {
-  //   content: [
-  // {
-  //   id: 1,
-  //   universityId: 1,
-  //   organizationId: 2,
-  //   name: '충전기',
-  //   totalQuantity: 2,
-  //   availableQuantity: 2,
-  //   isActive: true,
-  //   coverKey: 'univ/1/items/1/units/501.jpg',
-  // },
-  //     {
-  //       id: 1,
-  //       universityId: 1,
-  //       organizationId: 2,
-  //       name: '충전기',
-  //       totalQuantity: 2,
-  //       availableQuantity: 2,
-  //       isActive: true,
-  //       coverKey: 'univ/1/items/1/units/501.jpg',
-  //     },
-  //     {
-  //       id: 1,
-  //       universityId: 1,
-  //       organizationId: 2,
-  //       name: '충전기',
-  //       totalQuantity: 2,
-  //       availableQuantity: 2,
-  //       isActive: true,
-  //       coverKey: 'univ/1/items/1/units/501.jpg',
-  //     },
-  //   ],
-  //   page: 0,
-  //   size: 20,
-  //   totalElements: 1,
-  // };
-
-  const [query, setQuery] = useState('');
-  const [lastSearched, setLastSearched] = useState('');
   const { openModal, closeModal } = useModalStore();
 
-  const handleSearch = () => {
-    // 이 자리에서 API 호출 또는 필터링 로직 실행
-    setLastSearched(query);
-    console.log('검색 실행:', query);
-  };
-
   const [data, setData] = useState<Item[]>([]);
-
-  const basicOptions: SegmentOption[] = [
-    { value: 'all', label: '전체' },
-    { value: 'school', label: '학교' },
-    { value: 'middle', label: '총학' },
-    { value: 'subject', label: '학과' },
-  ];
-
-  const [selectedValue, setSelectedValue] = useState(basicOptions[0].value);
 
   // 풀스크린 모달을 여는 함수
   const handleOpenItemModal = (item: Item) => {
@@ -122,30 +63,36 @@ export default function RentPage() {
     });
   };
   const fetchListData = async () => {
-    // [todo] api 수정
-    const res = await getRequest<ApiResponse<Item>>(`http://43.200.61.108:8082/api/items`);
-    setData(res?.content);
-    console.log(res);
-  };
-  const handleBook = (itemId: number) => {
-    // api 요청
     try {
-      const request = async () => {
-        // [todo] api 수정
-        const res = await postRequest(`http://43.200.61.108:8082/api/waitlists/items/${itemId}`);
-        alert('완료!');
-        closeModal();
-        fetchListData();
-      };
-      request();
-    } catch {}
+      // 하드코딩된 URL을 requests 함수로 변경
+      const res = await getRequest<ApiResponse<Item>>('/items');
+      setData(res?.content || []);
+      console.log('아이템 목록 조회 성공:', res);
+    } catch (error) {
+      console.error('아이템 목록 조회 실패:', error);
+      setData([]);
+    }
+  };
+  const handleBook = async (itemId: number) => {
+    try {
+      // 하드코딩된 URL을 requests 함수로 변경
+      await postRequest(`/waitlists/items/${itemId}`);
+      alert('예약이 완료되었습니다!');
+      closeModal();
+      fetchListData();
+    } catch (error: unknown) {
+      console.error('예약 실패:', error);
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        '예약 중 오류가 발생했습니다.';
+      alert(`예약 실패: ${errorMessage}`);
+    }
   };
 
   useEffect(() => {
-    try {
-      fetchListData();
-    } catch {}
-  }, [selectedValue]);
+    // try-catch 제거 (fetchListData 내부에서 이미 처리)
+    fetchListData();
+  }, []); // selectedValue 의존성 제거
 
   return (
     <Box
@@ -166,8 +113,8 @@ export default function RentPage() {
 
       <VStack gap={0} align="stretch" mt={4} borderBottom="1px solid" borderColor="gray.200">
         {data.map((el) => {
-          const canRent = el?.availableQuantity < el?.totalQuantity;
-          const canBook = el?.countWaitList < el?.totalQuantity; // [todo] 예약 로직 수정
+          const canRent = el?.availableQuantity > 0; // 사용 가능한 수량이 1개 이상
+          const canBook = el?.availableQuantity === 0 && el?.countWaitList < el?.totalQuantity; // 대여 불가능하지만 대기열에 여유가 있을 때
           return (
             <Card
               image={<Image src={`${el?.coverKey}`} />}
@@ -188,12 +135,12 @@ export default function RentPage() {
                     label={canRent ? `대여하기` : `예약하기`}
                     onClick={() => {
                       if (canRent) {
-                        handleOpenItemModal(el);
+                        handleOpenItemModal(el); // 대여 모달 열기
                       } else if (canBook) {
-                        handleOpenBookModal(el);
+                        handleOpenBookModal(el); // 예약 모달 열기
                       }
                     }}
-                    disabled={!canRent && !canBook}
+                    disabled={!canRent && !canBook} // 둘 다 불가능하면 버튼 비활성화
                   >
                     {canRent ? '대여하기' : '예약하기'}
                   </Button>
