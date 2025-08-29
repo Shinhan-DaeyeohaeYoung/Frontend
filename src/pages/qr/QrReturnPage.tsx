@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { getRequest, postRequest } from '@/api/requests';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { createHandleOpenModal } from './components/ReturnModal';
+import { ReturnModal } from './components/ReturnModal';
 
 // QR 토큰 검증 응답 타입
 interface QRTokenResponse {
@@ -32,6 +32,7 @@ interface RentalItem {
   returnedAt: string | null;
   status: string;
   depositId: number | null;
+  unitImageUrl?: string; // ✅ 추가됨
 }
 
 // 대여 목록 응답 타입
@@ -40,24 +41,6 @@ interface RentalListResponse {
   page: number;
   size: number;
   totalElements: number;
-}
-
-// 물품 사진 타입 정의
-interface ItemPhoto {
-  id: number;
-  key: string;
-  imageUrl: string;
-  mime: string | null;
-  hash: string | null;
-  takenAt: string | null;
-}
-
-// 물품 정보 타입 정의
-interface ItemInfo {
-  id: number;
-  name: string;
-  description: string;
-  coverKey: string;
 }
 
 export default function QrReturnPage() {
@@ -78,7 +61,7 @@ export default function QrReturnPage() {
   const [rentalItems, setRentalItems] = useState<RentalItem[]>([]);
   const [isLoadingRentals, setIsLoadingRentals] = useState<boolean>(false);
 
-  // QR 토큰 검증 함수 수정
+  // QR 토큰 검증 함수
   const validateQRToken = async (token: string) => {
     try {
       setIsLoadingToken(true);
@@ -89,20 +72,17 @@ export default function QrReturnPage() {
       });
 
       if (response) {
-        // 🔒 중요: QR 토큰의 organizationId와 사용자 소속 조직 비교
-        const { user } = useAuthStore.getState(); // 컴포넌트 외부에서 store 접근
+        const { user } = useAuthStore.getState();
 
         if (!user) {
           setTokenError('사용자 정보를 찾을 수 없습니다.');
           return;
         }
 
-        // 사용자의 소속 조직 정보 확인
         const userUniversityId = user.organizationInfo?.university?.id;
         const userCollegeId = user.organizationInfo?.college?.id;
         const userDepartmentId = user.organizationInfo?.department?.id;
 
-        // QR 토큰의 organizationId가 사용자 소속 조직 중 하나와 일치하는지 확인
         const isAuthorized =
           response.organizationId === userUniversityId ||
           response.organizationId === userCollegeId ||
@@ -116,12 +96,10 @@ export default function QrReturnPage() {
           return;
         }
 
-        // 권한 확인 성공
         setQrTokenData(response);
         setIsTokenValid(true);
         console.log('QR 토큰 검증 및 권한 확인 성공:', response);
 
-        // 토큰 검증 성공 후 대여 목록 가져오기
         await fetchRentalItems(response.organizationId);
       }
     } catch (error: unknown) {
@@ -152,7 +130,6 @@ export default function QrReturnPage() {
       );
 
       if (response && response.content) {
-        // RENTED 상태이고 반납되지 않은 물품만 필터링
         const activeRentals = response.content.filter(
           (item) => item.status === 'RENTED' && !item.returnedAt
         );
@@ -168,33 +145,26 @@ export default function QrReturnPage() {
     }
   };
 
-  // 물품 사진 가져오기
-  const getItemPhoto = async (itemId: number, assetNo: string): Promise<string | null> => {
-    try {
-      const response = await getRequest<ItemPhoto>(`/items/${itemId}/units/${assetNo}/photo`);
-      return response?.imageUrl || null;
-    } catch (error) {
-      console.error('물품 사진 가져오기 실패:', error);
-      return null;
-    }
-  };
-
-  // ReturnModal 직접 렌더링 제거
-  // <ReturnModal /> 삭제
-
-  // handleOpenReturnModal 함수 생성
-  const handleOpenReturnModal = createHandleOpenModal(openModal, closeModal);
-
   // 반납 신청 처리 함수에서 모달 열기
   const handleReturnRequest = (rentalItem: RentalItem) => {
-    // ReturnModal에 필요한 모든 정보 전달
-    handleOpenReturnModal({
-      id: rentalItem.itemId,
-      name: `물품 ID: ${rentalItem.itemId}`,
-      rentalId: rentalItem.id,
-      universityId: rentalItem.universityId, // ✅ 추가됨
-      organizationId: rentalItem.organizationId, // ✅ 추가됨
-      userId: rentalItem.userId, // ✅ 추가됨
+    openModal({
+      body: (
+        <ReturnModal
+          item={{
+            id: rentalItem.itemId,
+            name: `물품 ID: ${rentalItem.itemId}`,
+            rentalId: rentalItem.id,
+            universityId: rentalItem.universityId,
+            organizationId: rentalItem.organizationId,
+            userId: rentalItem.userId,
+          }}
+          userId={rentalItem.userId}
+          universityId={rentalItem.universityId}
+          organizationId={rentalItem.organizationId}
+          onClose={closeModal}
+        />
+      ),
+      fullscreen: true,
     });
   };
 
@@ -317,13 +287,7 @@ export default function QrReturnPage() {
         {rentalItems.map((item) => (
           <Card
             key={item.id}
-            image={
-              <Image
-                src="/placeholder-image.jpg"
-                alt="물품 이미지"
-                fallbackSrc="/placeholder-image.jpg"
-              />
-            }
+            image={<Image src={item.unitImageUrl || '/placeholder-image.jpg'} alt="물품 이미지" />}
             title={`물품 ID: ${item.itemId}`}
             subtitle={`개별 ID: ${item.individualItemId}`}
             bottomExtra={
@@ -360,10 +324,7 @@ export default function QrReturnPage() {
         subtitle={'반납하실 물품을 선택해주세요! \n 반납가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       />
 
-      {/* QR 토큰 정보 표시 */}
       {renderQRTokenInfo()}
-
-      {/* 대여 중인 물품 목록 표시 */}
       {isTokenValid && renderRentalItems()}
     </Box>
   );

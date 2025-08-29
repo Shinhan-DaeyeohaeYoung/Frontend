@@ -28,8 +28,8 @@ export default function UnitCreatePage() {
   // 이전 페이지에서 전달받은 아이템 정보
   const { createdItemId, createdItemName } = location.state || {};
 
-  const [description, setDescription] = React.useState('');
-  const [status, setStatus] = React.useState('AVAILABLE');
+  const [description] = React.useState('');
+  const [status] = React.useState('AVAILABLE');
   const [images, setImages] = React.useState<ImageLike[]>([]);
 
   // 아이템 ID가 없으면 이전 페이지로 돌아가기

@@ -36,7 +36,7 @@ interface ReturnRequestResponse {
 }
 
 export default function AdminMainPage() {
-  const { openModal, closeModal } = useModalStore();
+  const { openModal } = useModalStore();
   const { user } = useAuthStore();
 
   const [data, setData] = useState<ReturnRequest[]>([]);

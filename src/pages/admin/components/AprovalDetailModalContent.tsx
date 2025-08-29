@@ -87,12 +87,9 @@ export default function AprovalDetailModalContent({
       if (onApproveSuccess) {
         onApproveSuccess();
       }
-    } catch (error: any) {
-      console.error('반납 승인 실패:', error);
-      if (error.response) {
-        console.error('에러 응답:', error.response.data);
-        console.error('에러 상태:', error.response.status);
-      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      console.error('에러 메시지:', errorMessage);
     } finally {
       setApproving(false);
     }

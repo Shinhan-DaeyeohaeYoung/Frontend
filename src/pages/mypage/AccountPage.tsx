@@ -125,8 +125,10 @@ const AccountPage: React.FC = () => {
       //   },
       // ]);
       setEvents(Array.isArray(res) ? res : []);
-    } catch (e: any) {
-      setError(e?.message ?? '계좌 내역을 불러오는 중 오류가 발생했습니다.');
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : '계좌 내역을 불러오는 중 오류가 발생했습니다.';
+      setError(errorMessage);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -144,8 +146,10 @@ const AccountPage: React.FC = () => {
       } else {
         setMyAccount(null);
       }
-    } catch (e: any) {
-      setAccError(e?.message ?? '내 계좌 정보를 불러오는 중 오류가 발생했습니다.');
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : '내 계좌 정보를 불러오는 중 오류가 발생했습니다.';
+      setAccError(errorMessage);
       setMyAccount(null);
     }
   };
@@ -216,11 +220,7 @@ const AccountPage: React.FC = () => {
             <Text fontSize="sm" color="gray.600" mb={2}>
               {myAccount ? myAccount.accountNoMasked : '계좌번호 없음'}
             </Text>
-            {myAccount?.primary && (
-              <Tag fontSize="xs" color="blue.600" mb={2} label="기본 계좌">
-                기본 계좌
-              </Tag>
-            )}
+            {myAccount?.primary && <Tag label="기본 계좌" />}
           </Flex>
           <Box>
             <Text fontSize="2xl" fontWeight="bold" textAlign="right">

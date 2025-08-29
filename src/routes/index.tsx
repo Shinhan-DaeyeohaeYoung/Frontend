@@ -15,8 +15,6 @@ import AdminReportsPage from '@/pages/admin/AdminReportsPage';
 import AdminAccountPage from '@/pages/admin/AdminAccountPage';
 import AdminItemCreatePage from '@/pages/admin/AdminItemCreatePage';
 import RentPage from '@/pages/rent/RentPage';
-import ReturnListPage from '@/pages/return/ReturnListPage';
-import ReturnPhotoPage from '@/pages/return/ReturnPhotoPage';
 import AdminUnitOverviewPage from '@/pages/admin/AdminUnitOverviewPage';
 import ReservationQueuePage from '@/pages/mypage/ReservationQueuePage';
 import RentHistoryPage from '@/pages/mypage/RentHistoryPage';
@@ -43,8 +41,6 @@ export default function AppRoutes() {
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/ranking" element={<RankingPage />} />
       <Route path="/account" element={<AccountPage />} />
-      <Route path="/return" element={<ReturnListPage />} />
-      <Route path="/return/:itemId/photo" element={<ReturnPhotoPage />} />
       <Route path="/mypage/account" element={<AccountPage />} />
       <Route path="/mypage/rent-history" element={<RentHistoryPage />} />
       <Route path="/mypage/reservation-queue" element={<ReservationQueuePage />} />

@@ -281,13 +281,16 @@ export default function LoginPage() {
 
       navigate('/main');
     } catch (error: unknown) {
-      console.error('=== 로그인 에러 ===', error);
+      let errorMessage = '로그인 중 오류가 발생했습니다.';
 
-      let errorMessage = '로그인에 실패했습니다.';
-
-      // 구체적인 에러 처리
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as any;
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string };
+            status?: number;
+          };
+        };
+
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
         } else if (axiosError.response?.status === 401) {

@@ -75,15 +75,17 @@ const QrScanPage: React.FC = () => {
     try {
       // URL인지 확인
       if (qrData.startsWith('http://') || qrData.startsWith('https://')) {
-        // 외부 URL인 경우 새 탭에서 열기
-        window.open(qrData, '_blank');
+        // localhost URL인 경우 경로만 추출해서 이동 (새 창 열기 방지)
+        if (qrData.includes('localhost:5173')) {
+          const url = new URL(qrData);
+          navigate(url.pathname + url.search);
+        } else {
+          // 외부 URL인 경우에만 새 탭에서 열기
+          window.open(qrData, '_blank');
+        }
       } else if (qrData.startsWith('/')) {
         // 내부 경로인 경우 React Router로 이동
         navigate(qrData);
-      } else if (qrData.includes('localhost:5173')) {
-        // localhost URL인 경우 경로만 추출해서 이동
-        const url = new URL(qrData);
-        navigate(url.pathname + url.search);
       } else {
         // 일반 텍스트인 경우 콘솔에 출력
         console.log('QR 스캔 결과:', qrData);
