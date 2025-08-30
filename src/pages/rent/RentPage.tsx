@@ -141,9 +141,6 @@ export default function RentPage() {
     // px={10}
     >
       <PageHeader
-        px={4}
-        pt={10}
-        py={16}
         // bgColor={'#A1C9FA'}
         // bgColor={'transparent'}
         // titleColor="#002DAB"

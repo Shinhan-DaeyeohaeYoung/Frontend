@@ -18,6 +18,19 @@ export default function ItemCreatePage() {
   const [deposit, setDeposit] = React.useState<number | ''>('');
   const [description, setDescription] = React.useState('');
 
+  const { admin, organizationInfo } = user ?? {};
+
+  // admin 값에 따라 해당 조직의 ID 가져오기
+  const organizationId =
+    admin && organizationInfo
+      ? (organizationInfo as Record<string, { id: number }>)[admin]?.id
+      : null;
+
+  // organizationId가 없으면 에러 처리
+  if (!organizationId) {
+    return <div>조직 정보를 찾을 수 없습니다.</div>;
+  }
+
   const validate = () => {
     if (!name.trim()) return '물품 명을 입력해주세요.';
     if (maxRentalDays === '' || Number(maxRentalDays) <= 0)
@@ -37,7 +50,7 @@ export default function ItemCreatePage() {
     try {
       const requestBody = {
         universityId: universityId || 1,
-        organizationId: user?.organizationInfo?.university?.id || 2,
+        organizationId: organizationId, // 하드코딩된 값 제거
         name: name.trim(),
         description: description.trim(),
         deposit: Number(deposit),
@@ -95,10 +108,10 @@ export default function ItemCreatePage() {
         {/* 물품 명 */}
         <Box mb={4}>
           <Text fontSize="sm" fontWeight="semibold" mb={2} color="gray.800" textAlign="left">
-            물품 명
+            물품명
           </Text>
           <TextInput
-            placeholder="물품 명을 입력해주세요"
+            placeholder="물품명을 입력해주세요"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />

@@ -399,22 +399,18 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
                 {totalPages > 1 && (
                   <HStack justify="space-between" mt={2}>
                     <Button
-                      variant="outline"
+                      label="이전"
                       disabled={page === 0}
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    >
-                      이전
-                    </Button>
+                    />
                     <Text fontSize="sm" color="gray.600">
                       {page + 1} / {totalPages}
                     </Text>
                     <Button
-                      variant="outline"
+                      label="다음"
                       disabled={page >= totalPages - 1}
                       onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                    >
-                      다음
-                    </Button>
+                    />
                   </HStack>
                 )}
               </>
@@ -423,17 +419,14 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
             {/* 하단 선택완료 버튼 */}
             <Box position="sticky" bottom={0} bg="white" pt={2} pb={4}>
               <HStack gap={2}>
-                <Button flex="1" variant="outline" onClick={cancelSelect}>
-                  취소
-                </Button>
+                <Button label="취소" flex="1" onClick={cancelSelect} />
                 <Button
+                  label="선택완료"
                   flex="2"
                   colorScheme="blue"
                   onClick={confirmSelect}
                   disabled={!pendingSelectedUnitId}
-                >
-                  선택완료
-                </Button>
+                />
               </HStack>
             </Box>
           </>
@@ -442,9 +435,13 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
       {/* 하단 대여 버튼 */}
       <Box position="sticky" bottom={0}>
-        <Button w="full" onClick={rent} loading={renting} disabled={!canRent}>
-          {renting ? '홀딩 중...' : canRent ? '대여하기 (30분 홀딩)' : '대여 불가'}
-        </Button>
+        <Button
+          label={renting ? '홀딩 중...' : canRent ? '대여하기 (30분 홀딩)' : '대여 불가'}
+          onClick={rent}
+          loading={renting}
+          disabled={!canRent}
+          w="full"
+        />
       </Box>
     </Box>
   );

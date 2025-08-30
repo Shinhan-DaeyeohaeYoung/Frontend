@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, VStack, Container, Text, Flex, Image } from '@chakra-ui/react';
+import { Box, VStack, Container, Text, Image } from '@chakra-ui/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/Button';
 import Modal from '@/components/Modal';

@@ -8,7 +8,6 @@ import { getRequest } from '@/api/requests';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/Button';
 import logo_01 from '@/assets/imgs/logo_01.png';
-import logo_02 from '@/assets/imgs/logo_02.png';
 
 type Unit = {
   id: number;

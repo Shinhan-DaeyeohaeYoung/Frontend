@@ -38,6 +38,13 @@ interface ReturnRequestResponse {
 export default function AdminMainPage() {
   const { openModal } = useModalStore();
   const { user } = useAuthStore();
+  const { admin, organizationInfo } = user ?? {};
+
+  // admin 값에 따라 해당 조직의 ID 가져오기
+  const organizationId =
+    admin && organizationInfo
+      ? (organizationInfo as Record<string, { id: number }>)[admin]?.id
+      : null;
 
   const [data, setData] = useState<ReturnRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,20 +52,14 @@ export default function AdminMainPage() {
 
   // 반납 신청 목록 가져오기
   const fetchReturnRequests = async () => {
+    if (!organizationId) {
+      console.warn('조직 ID가 없습니다.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
-
-      // 사용자의 조직 정보에서 organizationId 가져오기
-      const organizationId =
-        user?.organizationInfo?.university?.id ||
-        user?.organizationInfo?.college?.id ||
-        user?.organizationInfo?.department?.id;
-
-      if (!organizationId) {
-        setError('조직 정보를 찾을 수 없습니다.');
-        return;
-      }
 
       // API 호출
       const response = await getRequest<ReturnRequestResponse>(
@@ -108,10 +109,8 @@ export default function AdminMainPage() {
   // 로딩 상태 표시
   if (isLoading) {
     return (
-      <Box px={10}>
+      <Box>
         <PageHeader
-          px={0}
-          py={10}
           bgColor={'transparent'}
           title={'승인 대기 중'}
           subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
@@ -126,10 +125,8 @@ export default function AdminMainPage() {
   // 에러 상태 표시
   if (error) {
     return (
-      <Box px={10}>
+      <Box>
         <PageHeader
-          px={0}
-          py={10}
           bgColor={'transparent'}
           title={'승인 대기 중'}
           subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
@@ -143,19 +140,16 @@ export default function AdminMainPage() {
   }
 
   return (
-    <Box px={10}>
+    <Box>
       <PageHeader
-        px={0}
-        py={10}
         title={'승인 대기 중'}
         subtitle={'사용자가 반납 완료 후 관리자 승인 대기 목록입니다.'}
       />
 
-      <Flex justify={'space-between'} mt={2}>
+      <Flex justify={'space-between'} px={4} mt={2}>
         <Text fontSize="sm" color="gray.500">
           총 {data.length}개의 반납 신청
         </Text>
-        <Button label={'최신순 ^'} variant={'text'} size={'sm'} onClick={fetchReturnRequests} />
       </Flex>
 
       {data.length === 0 ? (

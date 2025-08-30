@@ -61,18 +61,12 @@ export default function AdminOverviewPage() {
 
   if (loading) {
     return (
-      <Box>
-        <PageHeader
-          px={4}
-          pt={10}
-          py={16}
-          imageSrc={logo_01}
-          imageSize={40}
-          title="물품 관리"
-          subtitle={'등록된 물품들을 확인하고 관리할 수 있어요'}
-        />
-        {/* <Text px={6}>로딩 중...</Text> */}
-      </Box>
+      <PageHeader
+        imageSrc={logo_01}
+        imageSize={40}
+        title="물품 관리"
+        subtitle={'등록된 물품들을 확인하고 관리할 수 있어요'}
+      />
     );
   }
 
@@ -80,9 +74,6 @@ export default function AdminOverviewPage() {
     return (
       <Box>
         <PageHeader
-          px={4}
-          pt={10}
-          py={16}
           imageSrc={logo_01}
           imageSize={40}
           title="물품 관리"
@@ -102,9 +93,6 @@ export default function AdminOverviewPage() {
     <Box>
       {/* ✅ RentPage와 동일한 헤더 톤 */}
       <PageHeader
-        px={4}
-        pt={10}
-        py={16}
         imageSrc={logo_01}
         imageSize={40}
         title="물품 관리"
@@ -134,7 +122,7 @@ export default function AdminOverviewPage() {
       >
         {items.map((item) => {
           const canRent = item.availableQuantity > 0;
-          const canBook = item.availableQuantity === 0 && item.countWaitList < item.totalQuantity;
+          // const canBook = item.availableQuantity === 0 && item.countWaitList < item.totalQuantity;
 
           return (
             <Card
