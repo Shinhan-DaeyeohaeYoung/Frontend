@@ -30,10 +30,16 @@ type BankAccount = {
   createdAt: string;
 };
 
+// 잔액 응답 타입 추가
+type BalanceResponse = {
+  accountBalance: number;
+};
+
 // ====== [todo]: 엔드포인트 수정 ======
 // 하드코딩된 URL 제거하고 상대 경로 사용
 const EVENTS_ENDPOINT = '/deposits';
 const MY_ACCOUNTS_ENDPOINT = '/users/me/bank-accounts';
+const BALANCE_ENDPOINT = '/users/me/balance'; // 잔액 조회 엔드포인트 추가
 
 // ====== 유틸 ======
 function toMMDD(dateIso: string) {
@@ -67,6 +73,10 @@ const AccountPage: React.FC = () => {
   // 내 계좌 (첫 번째/primary)
   const [myAccount, setMyAccount] = useState<BankAccount | null>(null);
   const [accError, setAccError] = useState<string | null>(null);
+
+  // 계좌 잔액 상태 추가
+  const [accountBalance, setAccountBalance] = useState<number>(0);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
 
   // --- 이체내역 불러오기 ---
   const fetchEvents = async () => {
@@ -104,13 +114,32 @@ const AccountPage: React.FC = () => {
     }
   };
 
+  // --- 계좌 잔액 불러오기 ---
+  const fetchAccountBalance = async () => {
+    try {
+      setBalanceError(null);
+      const balance = await getRequest<BalanceResponse>(BALANCE_ENDPOINT);
+      if (balance && typeof balance.accountBalance === 'number') {
+        setAccountBalance(balance.accountBalance);
+      } else {
+        setAccountBalance(0);
+      }
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : '계좌 잔액을 불러오는 중 오류가 발생했습니다.';
+      setBalanceError(errorMessage);
+      setAccountBalance(0);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
     fetchMyAccount();
+    fetchAccountBalance(); // 잔액 조회 추가
   }, []);
 
   // 누적 잔액 + 컴포넌트 매핑
-  const { transactions, currentBalance } = useMemo(() => {
+  const { transactions } = useMemo(() => {
     const sorted = [...events].sort(
       (a, b) => new Date(a.created_updated_at).getTime() - new Date(b.created_updated_at).getTime()
     );
@@ -174,8 +203,14 @@ const AccountPage: React.FC = () => {
           </Flex>
           <Box>
             <Text fontSize="2xl" fontWeight="bold" textAlign="right">
-              {currencyKRW(currentBalance)}원
+              {currencyKRW(accountBalance)}원
             </Text>
+
+            {balanceError && (
+              <Text fontSize="xs" color="red.500" textAlign="right" mt={1}>
+                {balanceError}
+              </Text>
+            )}
           </Box>
           {accError && (
             <Text mt={2} color="red.500" fontSize="sm">
