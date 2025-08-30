@@ -8,7 +8,6 @@ import {
   Select,
   Portal,
   createListCollection,
-  Image,
 } from '@chakra-ui/react';
 import { Chart, useChart } from '@chakra-ui/charts';
 import {
@@ -23,7 +22,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import logo from '@/assets/imgs/logo_04.png';
 
 // ✅ 여기서 색만 바꾸면 두 차트가 같이 바뀝니다.
 const CHART_COLORS = {
@@ -138,7 +136,6 @@ const AdminReportsPage = () => {
           <Text fontSize="4xl" fontWeight="bold" fontFamily={'jalnan'}>
             참고해요
           </Text>
-          <Box w="60px" h="40px" bg="white" rounded="md" opacity={0.3} />
         </HStack>
 
         {/* 대여 현황 도넛 차트 */}
@@ -146,7 +143,7 @@ const AdminReportsPage = () => {
           <Box pb={2}>
             <HStack justify="space-between" align="center">
               <Heading size="md" color="gray.800">
-                대여
+                대여 통계
               </Heading>
 
               <Select.Root
@@ -245,7 +242,7 @@ const AdminReportsPage = () => {
           <Box pb={2}>
             <HStack justify="space-between" align="center">
               <Heading size="md" color="gray.800">
-                연체
+                연체 통계
               </Heading>
 
               <Select.Root

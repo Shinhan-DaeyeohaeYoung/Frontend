@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { Box, Grid, GridItem, Text, Container, Portal } from '@chakra-ui/react';
+import { Box, Grid, GridItem, Container, Portal } from '@chakra-ui/react';
 import { Outlet, useLocation, matchPath, useNavigate } from 'react-router-dom';
 import bgImage from '@/assets/imgs/profile_bg.png';
 import { useRef, useState } from 'react';
@@ -18,12 +18,12 @@ const frameRules: Array<{ frame: HeaderFrame; patterns: string[] }> = [
   {
     // 헤더 없음 - 로그인/회원가입/메인 페이지
     frame: 'none',
-    patterns: ['/login', '/signup'],
+    patterns: ['/', '/login', '/signup'],
   },
   {
     // 사용자 헤더 (뒤로가기 없음) - 홈/메인 기능들
     frame: 'user',
-    patterns: ['/', '/main', '/rent', '/ranking', '/account'],
+    patterns: ['/main', '/rent', '/ranking', '/account'],
   },
   {
     // 사용자 헤더 (뒤로가기 있음) - 서브 페이지들
@@ -54,7 +54,7 @@ const getHeaderFrame = (pathname: string): HeaderFrame => {
 };
 
 function PcMent() {
-  return <Text color="gray.500">안녕하세요</Text>;
+  return '';
 }
 
 function BackgroundLayer() {
@@ -89,8 +89,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
   } = useModalStore();
 
   // 인증 상태 가져오기
-  const { user } = useAuthStore();
-
   // 사이드메뉴 상태
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 

@@ -3,7 +3,6 @@ import {
   Heading,
   Text,
   VStack,
-  Button,
   Input,
   Select,
   Portal,
@@ -15,6 +14,7 @@ import { tokenStorage } from '@/api/client';
 import { postRequest, getRequest } from '@/api/requests'; // 요청 유틸 함수 import
 import { toaster } from '@/components/UI/toaster';
 import { useAuthStore } from '@/stores/authStore';
+import { Button } from '@/components/Button';
 
 interface LoginResponse {
   accessToken: string;
@@ -57,16 +57,10 @@ interface UniversityInfo {
 
 const universities = createListCollection({
   items: [
-    { label: '서울대학교', value: '1' },
-    { label: '연세대학교', value: '2' },
-    { label: '고려대학교', value: '3' },
-    { label: '성균관대학교', value: '4' },
-    { label: '한양대학교', value: '5' },
-    { label: '중앙대학교', value: '6' },
-    { label: '경희대학교', value: '7' },
-    { label: '서강대학교', value: '8' },
-    { label: '이화여자대학교', value: '9' },
-    { label: '건국대학교', value: '10' },
+    { label: '쏠 대학교', value: 'ssol', id: 1 },
+    { label: '서울대학교', value: 'seoul', id: 2 },
+    { label: '연세대학교', value: 'yonsei', id: 3 },
+    { label: '고려대학교', value: 'korea', id: 4 },
   ],
 });
 
@@ -402,9 +396,8 @@ export default function LoginPage() {
           loading={isLoading}
           loadingText="로그인 중..."
           disabled={isLoading}
-        >
-          로그인
-        </Button>
+          label="로그인"
+        ></Button>
 
         <Text fontSize="sm" color="gray.500" textAlign="center">
           계정이 없으신가요?{' '}
@@ -412,10 +405,6 @@ export default function LoginPage() {
             회원가입
           </Link>
         </Text>
-
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/rent">메인으로 가기</Link>
-        </Button>
       </VStack>
     </Box>
   );
