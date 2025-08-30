@@ -7,12 +7,14 @@ export interface AppButtonProps extends Omit<ChakraButtonProps, 'variant' | 'siz
   label: string;
   variant?: AppButtonVariant;
   size?: 'sm' | 'md' | 'lg';
+  backgroundColor?: string; // backgroundColor prop 추가
 }
 
 export const Button: React.FC<AppButtonProps> = ({
   label,
   variant = 'default',
   size = 'lg',
+  backgroundColor, // backgroundColor 추가
   children,
   ...rest
 }) => {
@@ -25,7 +27,7 @@ export const Button: React.FC<AppButtonProps> = ({
         px={3}
         py={1}
         borderColor="gray.300"
-        colorPalette="accent"
+        backgroundColor={backgroundColor} // backgroundColor 적용
         _hover={{ bg: 'accent.600' }}
         {...rest}
       >
@@ -37,10 +39,10 @@ export const Button: React.FC<AppButtonProps> = ({
   if (variant === 'text') {
     return (
       <ChakraButton
-        variant="ghost" // 배경 없음
+        variant="ghost"
         size="sm"
         fontSize="sm"
-        colorPalette="accent" // hover 색상용
+        backgroundColor={backgroundColor} // backgroundColor 적용
         color="gray.600"
         _hover={{ bg: 'accent.600' }}
         {...rest}
@@ -55,8 +57,7 @@ export const Button: React.FC<AppButtonProps> = ({
     <ChakraButton
       size={size}
       variant="solid"
-      // borderColor="gray.400"
-      backgroundColor="accent.500"
+      backgroundColor={backgroundColor || 'accent.500'} // backgroundColor 적용, 기본값 유지
       _hover={{ bg: 'accent.600' }}
       {...rest}
     >

@@ -1,160 +1,155 @@
-import { Box, Heading, Text, VStack, Button, HStack, Badge } from '@chakra-ui/react';
-import { Link } from 'react-router-dom';
+import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
+import { PageHeader } from '@/components/PageHeader';
+import ssol from '@/assets/imgs/ssol.svg';
+import seoul from '@/assets/imgs/seoul.svg';
+import yeonse from '@/assets/imgs/yeonse.svg';
+import goryeo from '@/assets/imgs/goryeo.svg';
+
+// 대학 랭킹 데이터
+const universityRankings = [
+  {
+    rank: 1,
+    logo: ssol,
+    name: '중앙대학교',
+    score: '252,320pt',
+    isMedal: true,
+    medalType: 'gold',
+  },
+  {
+    rank: 2,
+    logo: seoul,
+    name: '경북대학교 대구캠퍼스',
+    score: '235,120pt',
+    isMedal: true,
+    medalType: 'silver',
+  },
+  {
+    rank: 3,
+    logo: yeonse,
+    name: '고려대학교 서울캠퍼스',
+    score: '234,560pt',
+    isMedal: true,
+    medalType: 'bronze',
+  },
+  {
+    rank: 4,
+    logo: goryeo,
+    name: '연세대학교 신촌캠퍼스',
+    score: '231,160pt',
+    isMedal: false,
+  },
+];
+
+// 메달 아이콘 컴포넌트
+const MedalIcon = ({ type, rank }: { type: string; rank: number }) => {
+  const medalColors = {
+    gold: '#FFD700',
+    silver: '#C0C0C0',
+    bronze: '#CD7F32',
+  };
+
+  return (
+    <Box
+      w="40px"
+      h="40px"
+      borderRadius="full"
+      bg={medalColors[type as keyof typeof medalColors]}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      fontSize="lg"
+      fontWeight="bold"
+      color="white"
+      boxShadow="0 2px 4px rgba(0,0,0,0.2)"
+    >
+      {rank}
+    </Box>
+  );
+};
+
+// 일반 순위 컴포넌트
+const RankNumber = ({ rank }: { rank: number }) => (
+  <Box
+    w="40px"
+    h="40px"
+    borderRadius="full"
+    bg="gray.100"
+    display="flex"
+    alignItems="center"
+    justifyContent="center"
+    fontSize="lg"
+    fontWeight="bold"
+    color="gray.600"
+  >
+    {rank}
+  </Box>
+);
 
 export default function RankingPage() {
   return (
-    <Box p={6}>
-      <VStack gap={6} align="center">
-        <Heading size="lg" color="red.600">
-          🏆 학교 랭킹
-        </Heading>
+    <Box>
+      <PageHeader
+        title="참여해요"
+        subtitle="대학별 랭킹을 확인해보세요"
+        bgColor="purple.500"
+        titleColor="white"
+        subtitleColor="white"
+      />
 
-        <Text fontSize="md" textAlign="center" color="gray.600">
-          이번 달 대여 서비스 이용 랭킹입니다
-        </Text>
+      <Box px={6} pt={6}>
+        <VStack gap={3} align="stretch">
+          {universityRankings.map((university) => (
+            <Box
+              key={university.rank}
+              bg="white"
+              borderRadius="xl"
+              p={4}
+              boxShadow="0 2px 8px rgba(0,0,0,0.1)"
+              border="1px solid"
+              borderColor="gray.100"
+            >
+              <Flex align="center" gap={4}>
+                {/* 순위/메달 */}
+                {university.isMedal && university.medalType ? (
+                  <MedalIcon type={university.medalType} rank={university.rank} />
+                ) : (
+                  <RankNumber rank={university.rank} />
+                )}
 
-        <VStack gap={3} align="stretch" w="full" maxW="500px">
-          {/* 1등 */}
-          <Box p={4} border="2px solid" borderColor="yellow.400" rounded="lg" bg="yellow.50">
-            <HStack gap={4}>
-              <Badge colorScheme="yellow" fontSize="lg" p={2}>
-                🥇 1등
-              </Badge>
-              <Box
-                w="40px"
-                h="40px"
-                bg="blue.500"
-                rounded="full"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                color="white"
-                fontWeight="bold"
-              >
-                김
-              </Box>
-              <VStack align="start" flex="1">
-                <Text fontWeight="bold" fontSize="lg">
-                  김철수
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  컴퓨터공학과 3학년
-                </Text>
-                <Text fontSize="sm" color="yellow.600">
-                  대여 횟수: 15회
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
-
-          {/* 2등 */}
-          <Box p={4} border="2px solid" borderColor="gray.300" rounded="lg" bg="gray.50">
-            <HStack gap={4}>
-              <Badge colorScheme="gray" fontSize="lg" p={2}>
-                🥈 2등
-              </Badge>
-              <Box
-                w="40px"
-                h="40px"
-                bg="green.500"
-                rounded="full"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                color="white"
-                fontWeight="bold"
-              >
-                이
-              </Box>
-              <VStack align="start" flex="1">
-                <Text fontWeight="bold" fontSize="lg">
-                  이영희
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  디자인학과 2학년
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  대여 횟수: 12회
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
-
-          {/* 3등 */}
-          <Box p={4} border="2px solid" borderColor="orange.300" rounded="lg" bg="orange.50">
-            <HStack gap={4}>
-              <Badge colorScheme="orange" fontSize="lg" p={2}>
-                🥉 3등
-              </Badge>
-              <Box
-                w="40px"
-                h="40px"
-                bg="orange.500"
-                rounded="full"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                color="white"
-                fontWeight="bold"
-              >
-                박
-              </Box>
-              <VStack align="start" flex="1">
-                <Text fontWeight="bold" fontSize="lg">
-                  박민수
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  경영학과 4학년
-                </Text>
-                <Text fontSize="sm" color="orange.600">
-                  대여 횟수: 10회
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
-
-          {/* 4-10등 */}
-          {[4, 5, 6, 7, 8, 9, 10].map((rank) => (
-            <Box key={rank} p={3} border="1px solid" borderColor="gray.200" rounded="md">
-              <HStack gap={4}>
-                <Text fontWeight="bold" color="gray.500" w="40px">
-                  {rank}등
-                </Text>
+                {/* 대학 로고 */}
                 <Box
-                  w="32px"
-                  h="32px"
-                  bg="gray.500"
-                  rounded="full"
+                  w="50px"
+                  h="50px"
+                  borderRadius="full"
+                  overflow="hidden"
+                  bg="gray.50"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
-                  color="white"
-                  fontWeight="bold"
-                  fontSize="sm"
                 >
-                  {rank}
+                  <Image
+                    src={university.logo}
+                    alt={`${university.name} 로고`}
+                    w="40px"
+                    h="40px"
+                    objectFit="contain"
+                  />
                 </Box>
-                <VStack align="start" flex="1">
-                  <Text fontWeight="bold">학생{rank}</Text>
-                  <Text fontSize="sm" color="gray.600">
-                    대여 횟수: {11 - rank}회
+
+                {/* 대학 정보 */}
+                <Box flex={1}>
+                  <Text fontSize="lg" fontWeight="bold" color="gray.800" mb={1}>
+                    {university.name}
                   </Text>
-                </VStack>
-              </HStack>
+                  <Text fontSize="md" color="gray.600">
+                    {university.score}
+                  </Text>
+                </Box>
+              </Flex>
             </Box>
           ))}
         </VStack>
-
-        <Box p={4} bg="blue.50" rounded="lg" w="full" maxW="500px">
-          <Text fontSize="sm" color="blue.600" textAlign="center">
-            💡 랭킹은 매월 1일 초기화되며, 대여 횟수와 반납 시간 준수율을 반영합니다
-          </Text>
-        </Box>
-
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/rent">← 메인으로 돌아가기</Link>
-        </Button>
-      </VStack>
+      </Box>
     </Box>
   );
 }
