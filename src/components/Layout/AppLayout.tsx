@@ -106,7 +106,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       color: 'accent.500',
     },
     {
-      label: '반납해요',
+      label: 'QR 스캔',
       onClick: () => navigate('/qr/scan'),
       category: '서비스',
       color: 'blue.500',
