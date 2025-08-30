@@ -30,8 +30,8 @@
 
 ## 🛠 기술 스택
 
+- **Frontend**: React.js, TypeScript, Zustand, Chakra UI, Vercel
 - **Backend**: Spring Boot, JPA, Spring Batch, Spring Security
-- **Frontend**: React
 - **Database**: MySQL, Redis
 - **Infra**: AWS EC2, S3, Docker
 - **Etc**: Swagger, OpenAI API
