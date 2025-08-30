@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore';
 import Modal from '@/components/Modal/Modal';
 import AppHeader from '@/components/Layout/AppHeader';
 import SideMenu from '@/components/Layout/SideMenu';
+import main_logo_sm from '@/assets/imgs/main_logo_sm.png';
 
 // 헤더 프레임 타입 정의
 type HeaderFrame = 'none' | 'user' | 'user-back' | 'admin' | 'admin-back';
@@ -101,60 +102,39 @@ export default function AppLayout({ children }: PropsWithChildren) {
     {
       label: '대여해요',
       onClick: () => navigate('/rent'),
+      category: '서비스',
+      color: 'accent.500',
     },
     {
-      label: '내 대여 현황',
-      onClick: () => navigate('/requests'),
-    },
-    {
-      label: '알림',
-      onClick: () => navigate('/notifications'),
-    },
-    {
-      label: '랭킹',
-      onClick: () => navigate('/ranking'),
-    },
-    {
-      label: '내 계정',
-      onClick: () => navigate('/account'),
-    },
-    {
-      label: 'QR 스캔',
+      label: '반납해요',
       onClick: () => navigate('/qr/scan'),
+      category: '서비스',
       color: 'blue.500',
     },
+
+    // { label: 'My 대학교 랭킹', onClick: () => navigate('/ranking'), category: '마이페이지' },
     {
-      label: '마이페이지/내 계좌내역',
+      label: '계좌 이체 내역',
       onClick: () => navigate('/mypage/account'),
+      category: '마이페이지',
     },
+    { label: '대여 내역', onClick: () => navigate('/mypage/rent-history'), category: '마이페이지' },
     {
-      label: '마이페이지/대여 내역',
-      onClick: () => navigate('/mypage/rent-history'),
-    },
-    {
-      label: '마이페이지/예약 중인 물품 목록',
+      label: '예약 내역',
       onClick: () => navigate('/mypage/reservation-queue'),
+      category: '마이페이지',
     },
     {
-      label: '마이페이지/대학교 리더보드',
+      label: '전국 학교 랭킹',
       onClick: () => navigate('/mypage/university'),
+      category: '마이페이지',
     },
+
+    { label: '반납 승인', onClick: () => navigate('/admin'), category: '관리자' },
+    { label: '물품 등록', onClick: () => navigate('/admin/overview'), category: '관리자' },
+    { label: '운영 계좌 관리', onClick: () => navigate('/admin/account'), category: '관리자' },
+    { label: '물품 대여 보고서', onClick: () => navigate('/admin/reports'), category: '관리자' },
   ];
-
-  // 관리자 메뉴 (QR 제외한 4개를 개별 항목으로 연결)
-  const adminMenuItems =
-    user?.admin !== 'none'
-      ? [
-          { label: '관리자 홈', onClick: () => navigate('/admin'), color: 'purple.500' },
-          { label: '관리자 개요', onClick: () => navigate('/admin/overview'), color: 'purple.500' },
-          { label: '관리자 보고', onClick: () => navigate('/admin/reports'), color: 'purple.500' },
-          { label: '관리자 계좌', onClick: () => navigate('/admin/account'), color: 'purple.500' },
-          // ✅ 요청대로 /admin/qr 항목은 포함하지 않음
-        ]
-      : [];
-
-  // 최종 메뉴 (사용자 + 관리자(옵션))
-  const menuItems = [...userMenuItems, ...adminMenuItems];
 
   // ❌ 하단 액션 제거 (관리자 모드 버튼 삭제)
   const bottomActions: Array<never> = [];
@@ -162,7 +142,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const handleMenuClick = () => setIsSideMenuOpen(true);
   const handleLogoClick = () => navigate('/');
   const handleLogout = () => {
-    console.log('로그아웃');
+    // console.log('로그아웃');
     // authStore에서 로그아웃 처리
     useAuthStore.getState().logout();
     navigate('/login');
@@ -235,8 +215,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 onClose={() => setIsSideMenuOpen(false)}
                 onLogoClick={handleLogoClick}
                 onLogout={handleLogout}
-                menuItems={menuItems}
+                menuItems={userMenuItems}
                 bottomActions={bottomActions} // 빈 배열 전달
+                logoSrc={main_logo_sm}
               />
 
               {/* 메인 콘텐츠 */}
