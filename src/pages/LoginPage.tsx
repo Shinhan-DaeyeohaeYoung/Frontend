@@ -369,7 +369,7 @@ export default function LoginPage() {
           </Text>
           <Input
             type="text"
-            placeholder="2019038073"
+            placeholder="20250000"
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
             onKeyPress={handleKeyPress}

@@ -79,8 +79,11 @@ export default function ReservationQueuePage() {
   };
 
   useEffect(() => {
-    fetchReservations();
-  }, []);
+    // 한 번만 실행되도록 수정
+    if (reservations.length === 0) {
+      fetchReservations();
+    }
+  }, []); // 빈 의존성 배열
 
   return (
     <Box>
