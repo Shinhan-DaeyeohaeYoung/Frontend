@@ -2,38 +2,44 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Image, VStack } from '@chakra-ui/react';
 import { useAuthStore } from '@/stores/authStore';
+// ✅ 정적 자산은 import로! (Vite가 해시 경로로 바꿔줌)
+import logoUrl from '@/assets/imgs/main_logo.png?url';
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
 
+  // ✅ 로고 프리로드(초기 깜빡임 줄이기)
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = logoUrl;
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-
-      // 인증 상태에 따라 라우팅
-      if (isAuthenticated) {
-        navigate('/rent'); // 로그인된 사용자는 메인 페이지로
-      } else {
-        navigate('/login'); // 로그인되지 않은 사용자는 로그인 페이지로
-      }
-    }, 2000); // 2초 후 전환
-
+      navigate(isAuthenticated ? '/rent' : '/login');
+    }, 1200); // 필요하면 200~800ms로 더 줄여도 OK
     return () => clearTimeout(timer);
   }, [navigate, isAuthenticated]);
 
   if (isLoading) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="gray.50">
+      <Box minH="100dvh" display="flex" alignItems="center" justifyContent="center" bg="white">
         <VStack gap={6}>
           <Image
-            src="/src/assets/imgs/main_logo.png"
+            src={logoUrl} // ✅ import한 경로 사용
             alt="Main Logo"
             maxW="300px"
             w="full"
             h="auto"
-            animation="fade-in 0.5s ease-in-out"
           />
         </VStack>
       </Box>
