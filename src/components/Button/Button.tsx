@@ -13,6 +13,7 @@ export const Button: React.FC<AppButtonProps> = ({
   label,
   variant = 'default',
   size = 'lg',
+  children,
   ...rest
 }) => {
   if (variant === 'caption') {
@@ -25,10 +26,10 @@ export const Button: React.FC<AppButtonProps> = ({
         py={1}
         borderColor="gray.300"
         colorPalette="accent"
-        _hover={{ bg: 'gray.100' }}
+        _hover={{ bg: 'accent.600' }}
         {...rest}
       >
-        {label}
+        {label} {children}
       </ChakraButton>
     );
   }
@@ -41,10 +42,10 @@ export const Button: React.FC<AppButtonProps> = ({
         fontSize="sm"
         colorPalette="accent" // hover 색상용
         color="gray.600"
-        _hover={{ bg: 'gray.200' }}
+        _hover={{ bg: 'accent.600' }}
         {...rest}
       >
-        {label}
+        {label} {children}
       </ChakraButton>
     );
   }
@@ -56,10 +57,10 @@ export const Button: React.FC<AppButtonProps> = ({
       variant="solid"
       // borderColor="gray.400"
       backgroundColor="accent.500"
-      _hover={{ bg: 'gray.100' }}
+      _hover={{ bg: 'accent.600' }}
       {...rest}
     >
-      {label}
+      {label} {children}
     </ChakraButton>
   );
 };

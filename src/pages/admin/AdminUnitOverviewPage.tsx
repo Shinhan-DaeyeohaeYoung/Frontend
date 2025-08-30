@@ -1,5 +1,5 @@
 // src/pages/admin/AdminUnitOverviewPage.tsx
-import { Box, Text, VStack, Image } from '@chakra-ui/react';
+import { Box, Text, VStack, Image, Flex } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
 import { useMemo, useState, useEffect } from 'react';
 import { Card } from '@/components/Card';
@@ -7,6 +7,7 @@ import { Tag } from '@/components/Tag';
 import { getRequest } from '@/api/requests';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/Button';
+import logo_01 from '@/assets/imgs/logo_01.png';
 
 type Unit = {
   id: number;
@@ -112,38 +113,100 @@ export default function AdminUnitOverviewPage() {
   }
 
   return (
-    <Box px={10}>
+    <Box>
       <PageHeader
-        px={0}
-        py={10}
-        bgColor="transparent"
-        title={`${itemDetail.name} 대여 현황`}
-        subtitle="물품 개체들을 확인하고 관리할 수 있습니다."
+        px={4}
+        pt={10}
+        py={16}
+        // bgColor="#7A6FFB"
+        // bgColor="#FFAD67"
+        imageSrc={logo_01}
+        // imageSrc={logo_02}
+        imageSize={40}
+        // imageSize={180}
+        title={`물품 관리 상세`}
+        subtitle={`${itemDetail.name} 물품의 모든 개체들을 확인하고 관리할 수 있어요`}
       />
 
       {/* 아이템 기본 정보 */}
-      <Box mb={6} p={4} bg="gray.50" borderRadius="md">
-        <Text fontSize="lg" fontWeight="bold" mb={2}>
-          아이템 정보
+      {/* 아이템 기본 정보 - spacing, noOfLines 없이 */}
+      <Box
+        mb={10}
+        p={5}
+        bg="white"
+        // border="1px solid"
+        // borderColor="gray.200"
+        // rounded="xl"
+        // shadow="sm"
+      >
+        <Text textAlign={'left'} fontSize="md" fontWeight="semibold" color="gray.700" mb={3}>
+          물품 정보
         </Text>
-        <Text fontSize="sm" color="gray.700" mb={1}>
-          설명: {itemDetail.description}
-        </Text>
-        <Text fontSize="sm" color="gray.700" mb={1}>
-          총 수량: {itemDetail.totalQuantity}개 | 대여 가능: {itemDetail.availableQuantity}개
-        </Text>
-        <Text fontSize="sm" color="gray.700" mb={1}>
-          보증금: {itemDetail.deposit}원 | 최대 대여 기간: {itemDetail.maxRentalDays}일
-        </Text>
-        {itemDetail.countWaitList > 0 && (
-          <Text fontSize="sm" color="orange.500">
-            대기자: {itemDetail.countWaitList}명
+
+        {/* 설명 */}
+        <Flex justify="space-between" align="flex-start" mb={2}>
+          <Text fontSize="sm" color="gray.500" flexShrink={0}>
+            설명
           </Text>
+          <Text fontSize="sm" color="gray.800" textAlign="right">
+            {itemDetail.description || '-'}
+          </Text>
+        </Flex>
+        <Box h="1px" bg="gray.100" mb={2} />
+
+        {/* 수량 */}
+        <Flex justify="space-between" mb={2}>
+          <Text fontSize="sm" color="gray.500" flexShrink={0}>
+            보유 / 대여 가능
+          </Text>
+          <Text fontSize="sm" color="gray.800" textAlign="right">
+            <Text as="span" fontWeight="bold" color="gray.900">
+              {itemDetail.availableQuantity}
+            </Text>
+            <Text as="span" color="gray.500">
+              / {itemDetail.totalQuantity}개
+            </Text>
+          </Text>
+        </Flex>
+        <Box h="1px" bg="gray.100" mb={2} />
+
+        {/* 보증금 / 기간 */}
+        <Flex justify="space-between" mb={2}>
+          <Text fontSize="sm" color="gray.500" flexShrink={0}>
+            보증금 / 최대 기간
+          </Text>
+          <Text fontSize="sm" color="gray.800" textAlign="right">
+            <Text as="span" fontWeight="bold">
+              {itemDetail.deposit.toLocaleString()}
+            </Text>
+            원 · {itemDetail.maxRentalDays}일
+          </Text>
+        </Flex>
+        <Box h="1px" bgColor={'gray.200'}></Box>
+        {/* 대기자 */}
+        {itemDetail.countWaitList > 0 && (
+          <Flex
+            justify="space-between"
+            align="center"
+            p={3}
+            mt={3}
+            bg="orange.50"
+            border="1px solid"
+            borderColor="orange.200"
+            rounded="md"
+          >
+            <Text fontSize="sm" color="orange.700" fontWeight="semibold">
+              대기자
+            </Text>
+            <Text fontSize="sm" color="orange.700" fontWeight="bold">
+              {itemDetail.countWaitList}명
+            </Text>
+          </Flex>
         )}
       </Box>
 
-      <Text fontSize="sm" color="gray.700" mt={-2} mb={2}>
-        대여 가능, 대여 중 물품 개수: {availableCount}개 / {totalCount}개
+      <Text fontSize="sm" color="gray.700" mt={-2} mb={2} textAlign={'right'} mr={6}>
+        대여 가능 + 대여 중: {availableCount}개 / {totalCount}개
       </Text>
 
       <VStack gap={3} align="stretch" mt={2}>

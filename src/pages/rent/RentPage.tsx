@@ -1,4 +1,4 @@
-import { Box, Text, VStack, Flex, Image } from '@chakra-ui/react';
+import { Box, Text, VStack, Flex, Image, Heading } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/Card';
@@ -32,6 +32,18 @@ export interface Item {
   countWaitList: number;
   isBooked: boolean; // 예약 상태 필드 추가
 }
+
+// 아이템 목록이 비어있을 때 표시할 컴포넌트
+const EmptyState = () => (
+  <VStack gap={6} py={12} textAlign="center">
+    <Box fontSize="6xl">😢</Box>
+    <VStack gap={2}>
+      <Heading size="md" color="gray.600">
+        현재 대여가능한 물품이 없습니다...
+      </Heading>
+    </VStack>
+  </VStack>
+);
 
 export default function RentPage() {
   const { openModal, closeModal } = useModalStore();
@@ -129,9 +141,6 @@ export default function RentPage() {
     // px={10}
     >
       <PageHeader
-        px={4}
-        pt={10}
-        py={16}
         // bgColor={'#A1C9FA'}
         // bgColor={'transparent'}
         // titleColor="#002DAB"
@@ -142,50 +151,53 @@ export default function RentPage() {
       ></PageHeader>
 
       <VStack gap={0} align="stretch" mt={4} borderBottom="1px solid" borderColor="gray.200">
-        {data.map((el) => {
-          const canRent = el?.availableQuantity > 0; // 사용 가능한 수량이 1개 이상
-          const canBook = el?.availableQuantity === 0 && el?.totalQuantity - el?.countWaitList > 0; // 대여 불가능하지만 예약 가능한 수량이 있을 때
-          const isBooked = el?.isBooked; // 예약 상태 확인
+        {data.length === 0 ? (
+          <EmptyState />
+        ) : (
+          data.map((el) => {
+            const canRent = el?.availableQuantity > 0; // 사용 가능한 수량이 1개 이상
+            const canBook =
+              el?.availableQuantity === 0 && el?.totalQuantity - el?.countWaitList > 0; // 대여 불가능하지만 예약 가능한 수량이 있을 때
+            const isBooked = el?.isBooked; // 예약 상태 확인
 
-          return (
-            <Card
-              image={<Image src={`${el?.coverKey}`} />}
-              title={el?.name}
-              subtitle={el?.description}
-              bottomExtra={
-                <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
-                  <Text fontSize={'xs'} color={'gray.500'}>
-                    {`${
-                      canRent
-                        ? `대여 가능: ${el?.availableQuantity}/${el?.totalQuantity}개`
-                        : `예약 가능: ${el?.totalQuantity - el?.countWaitList}/${
-                            el?.totalQuantity
-                          }개`
-                    }`}
-                  </Text>
-                  <Button
-                    ml="auto"
-                    size="sm"
-                    label={isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
-                    onClick={() => {
-                      if (isBooked) {
-                        handleCancelReservation(el.id);
-                      } else if (canRent) {
-                        handleOpenItemModal(el);
-                      } else if (canBook) {
-                        handleOpenBookModal(el);
-                      }
-                    }}
-                    disabled={!canRent && !canBook && !isBooked}
-                    colorScheme={isBooked ? 'red' : 'blue'}
-                  >
-                    {isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
-                  </Button>
-                </Flex>
-              }
-            ></Card>
-          );
-        })}
+            return (
+              <Card
+                image={<Image src={`${el?.coverKey}`} />}
+                title={el?.name}
+                subtitle={el?.description}
+                bottomExtra={
+                  <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
+                    <Text fontSize={'xs'} color={'gray.500'}>
+                      {`${
+                        canRent
+                          ? `대여 가능: ${el?.availableQuantity}/${el?.totalQuantity}개`
+                          : `예약 가능: ${el?.totalQuantity - el?.countWaitList}/${
+                              el?.totalQuantity
+                            }개`
+                      }`}
+                    </Text>
+                    <Button
+                      ml="auto"
+                      size="sm"
+                      label={isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
+                      onClick={() => {
+                        if (isBooked) {
+                          handleCancelReservation(el.id);
+                        } else if (canRent) {
+                          handleOpenItemModal(el);
+                        } else if (canBook) {
+                          handleOpenBookModal(el);
+                        }
+                      }}
+                      disabled={!canRent && !canBook && !isBooked}
+                      colorScheme={isBooked ? 'red' : 'blue'}
+                    ></Button>
+                  </Flex>
+                }
+              ></Card>
+            );
+          })
+        )}
       </VStack>
     </Box>
   );

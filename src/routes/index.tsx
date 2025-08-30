@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from '@/pages/HomePage';
-import MainPage from '@/pages/MainPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import RequestsPage from '@/pages/RequestsPage';
@@ -28,7 +27,6 @@ export default function AppRoutes() {
     <Routes>
       {/* 공개 페이지 */}
       <Route path="/" element={<HomePage />} />
-      <Route path="/main" element={<MainPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 

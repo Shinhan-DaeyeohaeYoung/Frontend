@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Box, VStack, Container, Text } from '@chakra-ui/react';
+import { Box, VStack, Container, Text, Image } from '@chakra-ui/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/Button';
-import { PageHeader } from '@/components/PageHeader';
 import Modal from '@/components/Modal';
 import { getRequest } from '@/api/requests';
 import { useAuthStore } from '@/stores/authStore';
-
+import { AspectRatio } from '@chakra-ui/react';
+import logo_03 from '@/assets/imgs/logo_03.png';
+import logo_05 from '@/assets/imgs/logo_05.png';
 type PageState = 'main' | 'rental' | 'return';
 
 interface QRMetaResponse {
@@ -113,14 +114,6 @@ export default function AdminQrPage() {
     }
   };
 
-  const getPageTitle = () => {
-    return 'QR 페이지';
-  };
-
-  const getPageSubtitle = () => {
-    return '대여관련 설명\n대여하기 버튼을\n누른 뒤에\nQR 찍어주세요';
-  };
-
   const getModalTitle = () => {
     switch (currentPage) {
       case 'rental':
@@ -135,31 +128,107 @@ export default function AdminQrPage() {
   const renderMainContent = () => {
     return (
       <VStack gap={4} w="full">
-        <Button
-          label="대여하기(QR 띄우기)"
-          size="lg"
-          w="full"
-          bg="#ff4d8d"
-          color="white"
-          _hover={{ bg: '#e63d7a' }}
-          borderRadius="xl"
-          py={6}
-          onClick={handleRentalClick}
-          disabled={isLoading}
-        />
+        {/* 대여하기 QR - 정사각형 */}
+        <AspectRatio ratio={1} w="full">
+          {/* bgImage={`url(${logo_03})`} // ✅ 원하는 이미지 경로로 교체 */}
+          <Button
+            shadow="sm"
+            bgColor={'#FFAD67'}
+            position={'relative'}
+            aria-label="대여하기 QR"
+            onClick={handleRentalClick}
+            disabled={isLoading}
+            w="100%"
+            h="100%"
+            p={0}
+            borderRadius="2xl"
+            overflow="hidden"
+            // bgImage="url('/assets/images/return-qr.jpg')" // ✅ 원하는 이미지 경로로 교체
+            // bgSize="cover"
+            bgPos="center"
+            color="white"
+            _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+            transition="transform .15s ease"
+            label=""
+          >
+            <VStack
+              w="100%"
+              h="100%"
+              align="flex-start"
+              justify="flex-end"
+              p={5}
+              bgGradient="linear(to-t, blackAlpha.600, blackAlpha.100 40%, transparent)"
+              gap={1}
+            >
+              <Text fontSize="3xl" fontWeight="bold">
+                대여하기 QR
+              </Text>
+              <Text fontSize="sm" opacity={0.9}>
+                스캔하여 대여를 진행하세요
+              </Text>
+            </VStack>
+            <Image
+              src={logo_05}
+              alt="rent icon"
+              position="absolute"
+              top={4}
+              right={0}
+              boxSize={240} // ✅ 원하는 사이즈
+              objectFit="contain"
+              pointerEvents="none"
+            ></Image>
+          </Button>
+        </AspectRatio>
 
-        <Button
-          label="반납하기(QR 띄우기)"
-          size="lg"
-          w="full"
-          bg="gray.100"
-          color="gray.600"
-          _hover={{ bg: 'gray.200' }}
-          borderRadius="xl"
-          py={6}
-          onClick={handleReturnClick}
-          disabled={isLoading}
-        />
+        {/* 반납하기 QR - 정사각형 */}
+        <AspectRatio ratio={1} w="full">
+          <Button
+            shadow="sm"
+            bgColor={'#95CAFF'}
+            aria-label="반납하기 QR"
+            onClick={handleReturnClick}
+            disabled={isLoading}
+            w="100%"
+            h="100%"
+            p={0}
+            borderRadius="2xl"
+            overflow="hidden"
+            bgImage="url('/assets/images/return-qr.jpg')" // ✅ 원하는 이미지 경로로 교체
+            bgSize="cover"
+            bgPos="center"
+            color="white"
+            _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+            transition="transform .15s ease"
+            label=""
+          >
+            <VStack
+              w="100%"
+              h="100%"
+              align="flex-start"
+              justify="flex-end"
+              p={5}
+              bgGradient="linear(to-t, blackAlpha.600, blackAlpha.100 40%, transparent)"
+              gap={1}
+            >
+              <Text fontSize="3xl" fontWeight="bold">
+                반납하기 QR
+              </Text>
+              <Text fontSize="sm" opacity={0.9}>
+                스캔하여 반납을 진행하세요
+              </Text>
+            </VStack>
+            <Image
+              src={logo_03}
+              alt="rent icon"
+              position="absolute"
+              top={4}
+              right={0}
+              boxSize={240} // ✅ 원하는 사이즈
+              objectFit="contain"
+              pointerEvents="none"
+            ></Image>
+          </Button>
+        </AspectRatio>
       </VStack>
     );
   };
@@ -235,18 +304,10 @@ export default function AdminQrPage() {
 
   return (
     <Box minH="100vh" bgGradient="linear(to-b, #ff4d8d, #7a5cf5)">
-      <Container maxW="md" py={0}>
+      <Container maxW="md" py={0} px={0}>
         <VStack gap={6} align="stretch">
-          {/* 헤더 */}
-          <PageHeader
-            title={getPageTitle()}
-            subtitle={getPageSubtitle()}
-            align="center"
-            color="white"
-          />
-
           {/* 메인 카드 */}
-          <Box bg="white" shadow="xl" borderRadius="2xl" p={8}>
+          <Box bg="white" borderRadius="2xl" p={6}>
             {renderMainContent()}
           </Box>
         </VStack>

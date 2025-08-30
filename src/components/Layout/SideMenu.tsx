@@ -1,30 +1,37 @@
+// SideMenu.tsx
 import React from 'react';
-import { Box, VStack, HStack, Image, Button, CloseButton, Portal } from '@chakra-ui/react';
+import { Box, VStack, HStack, Image, Button, CloseButton, Portal, Text } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '@/stores/authStore';
 
 const MotionBox = motion(Box);
 
+interface MenuItem {
+  label: string;
+  onClick: () => void;
+  color?: string;
+  category?: string; // '서비스' | '마이페이지' | '관리자' | ...
+}
+
+interface BottomAction {
+  label: string;
+  onClick: () => void;
+  color?: string;
+  condition?: boolean;
+  category?: string; // 선택: 관리자 전용 표시 등에 활용 가능
+}
+
 interface SideMenuProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
-  isOpen: boolean; // 외부에서 상태 제어
+  isOpen: boolean;
   onClose: () => void;
-  // 필요한 props들을 여기에 추가
+
   logoSrc?: string;
   onLogoClick?: () => void;
   onLogout?: () => void;
-  // 추가 메뉴 항목들
-  menuItems?: Array<{
-    label: string;
-    onClick: () => void;
-    color?: string;
-  }>;
-  // 하단 액션 버튼들
-  bottomActions?: Array<{
-    label: string;
-    onClick: () => void;
-    color?: string;
-    condition?: boolean; // 조건부 렌더링을 위한 속성
-  }>;
+
+  menuItems?: MenuItem[];
+  bottomActions?: BottomAction[];
 }
 
 const SideMenu: React.FC<SideMenuProps> = ({
@@ -37,7 +44,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
   menuItems = [],
   bottomActions = [],
 }) => {
-  //   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuthStore();
+  const isAdmin = !!user && user.admin !== 'none';
 
   const handleLogoClick = () => {
     onLogoClick?.();
@@ -49,9 +57,35 @@ const SideMenu: React.FC<SideMenuProps> = ({
     onClose();
   };
 
+  // 1) 관리자 여부에 따라 메뉴 필터
+  const filteredMenuItems = React.useMemo(() => {
+    return (menuItems ?? []).filter((item) => {
+      if (item.category === '관리자' && !isAdmin) return false;
+      return true;
+    });
+  }, [menuItems, isAdmin]);
+
+  // (선택) 하단 액션도 관리자 전용이 있다면 동일하게 필터
+  const filteredBottomActions = React.useMemo(() => {
+    return (bottomActions ?? []).filter((action) => {
+      if (action.condition === false) return false;
+      // 카테고리로 관리자 제한을 두고 싶다면:
+      if (action.category === '관리자' && !isAdmin) return false;
+      return true;
+    });
+  }, [bottomActions, isAdmin]);
+
+  // 2) 필터된 메뉴를 카테고리별로 그룹핑
+  const grouped = React.useMemo(() => {
+    return filteredMenuItems.reduce<Record<string, MenuItem[]>>((acc, item) => {
+      const cat = item.category || '기타';
+      (acc[cat] ||= []).push(item);
+      return acc;
+    }, {});
+  }, [filteredMenuItems]);
+
   return (
     <>
-      {/* 메뉴 열기 버튼 */}
       <AnimatePresence>
         {isOpen && containerRef.current && (
           <Portal container={containerRef}>
@@ -80,18 +114,17 @@ const SideMenu: React.FC<SideMenuProps> = ({
               boxShadow="lg"
               display="flex"
               flexDirection="column"
-              justifyContent="space-between"
               initial={{ x: 300 }}
               animate={{ x: 0 }}
               exit={{ x: 300 }}
               transition={{ duration: 0.25 }}
             >
-              {/* 상단 영역 */}
-              <VStack align="stretch" gap={4} p={4}>
+              {/* 상단/메뉴 스크롤 영역 */}
+              <VStack align="stretch" gap={4} p={4} flex="1" overflowY="auto">
                 {/* 헤더 */}
                 <HStack justify="space-between">
                   <HStack gap={2}>
-                    {logoSrc && (
+                    {logoSrc ? (
                       <Box
                         as="button"
                         onClick={handleLogoClick}
@@ -100,74 +133,82 @@ const SideMenu: React.FC<SideMenuProps> = ({
                       >
                         <Image src={logoSrc} alt="로고" h="40px" />
                       </Box>
-                    )}
-                    {!logoSrc && onLogoClick && (
-                      <Button
-                        variant="ghost"
-                        onClick={handleLogoClick}
-                        fontWeight="bold"
-                        fontSize="lg"
-                      >
-                        홈
-                      </Button>
+                    ) : (
+                      onLogoClick && (
+                        <Button
+                          variant="ghost"
+                          onClick={handleLogoClick}
+                          fontWeight="bold"
+                          fontSize="lg"
+                        ></Button>
+                      )
                     )}
                   </HStack>
-                  <CloseButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      onClose();
-                    }}
-                  />
+                  <CloseButton variant="ghost" size="sm" onClick={onClose} />
                 </HStack>
 
-                {/* 메뉴 항목들 */}
-                <VStack align="stretch" gap={1}>
-                  {menuItems.map((item, index) => (
-                    <Button
-                      key={index}
-                      variant="ghost"
-                      justifyContent="flex-start"
-                      py={6}
-                      color={item.color || 'gray.700'}
-                      onClick={() => handleMenuClick(item.onClick)}
-                    >
-                      {item.label}
-                    </Button>
+                {/* 카테고리 그룹 */}
+                <VStack align="stretch" gap={4}>
+                  {Object.entries(grouped).map(([category, items]) => (
+                    <Box key={category}>
+                      {/* 카테고리 헤더: 회색 배경 + 패딩 */}
+                      <Box bg="gray.100" px={3} py={1} rounded="md" mb={2}>
+                        <Text fontSize="xs" fontWeight="bold" color="gray.600">
+                          {category}
+                        </Text>
+                      </Box>
+
+                      {/* 항목 리스트 */}
+                      <VStack align="stretch" gap={1}>
+                        {items.map((item, idx) => (
+                          <Button
+                            key={`${category}-${idx}`}
+                            variant="ghost"
+                            justifyContent="flex-start"
+                            py={6}
+                            color={item.color || 'gray.700'}
+                            onClick={() => handleMenuClick(item.onClick)}
+                          >
+                            {item.label}
+                          </Button>
+                        ))}
+                      </VStack>
+                    </Box>
                   ))}
                 </VStack>
               </VStack>
 
-              {/* 하단 액션 버튼 그룹 */}
-              <VStack align="stretch" px={4} pb={6}>
-                {/* 로그아웃 버튼 */}
-                {onLogout && (
-                  <Button
-                    variant="ghost"
-                    justifyContent="flex-start"
-                    color="red.500"
-                    onClick={() => handleMenuClick(onLogout)}
-                  >
-                    로그아웃
-                  </Button>
-                )}
-
-                {/* 추가 하단 액션들 */}
-                {bottomActions
-                  .filter((action) => action.condition !== false) // condition이 false가 아닌 것만 표시
-                  .map((action, index) => (
+              {/* 하단 고정 영역: 구분선 + 우측 정렬 로그아웃 + 추가 액션 */}
+              <Box borderTop="1px solid" borderColor="gray.200" px={4} py={3}>
+                <HStack justify="flex-end">
+                  {onLogout && (
                     <Button
-                      key={index}
                       variant="ghost"
-                      justifyContent="flex-start"
-                      py={6}
-                      color={action.color || 'red.500'}
-                      onClick={() => handleMenuClick(action.onClick)}
+                      color="gray.500"
+                      onClick={() => handleMenuClick(onLogout)}
                     >
-                      {action.label}
+                      로그아웃
                     </Button>
-                  ))}
-              </VStack>
+                  )}
+                </HStack>
+
+                {filteredBottomActions.length > 0 && (
+                  <VStack align="stretch" mt={2}>
+                    {filteredBottomActions.map((action, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        justifyContent="flex-start"
+                        py={6}
+                        color={action.color || 'red.500'}
+                        onClick={() => handleMenuClick(action.onClick)}
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
             </MotionBox>
           </Portal>
         )}

@@ -152,7 +152,7 @@ export default function RankingPage() {
         </Box>
 
         <Button asChild variant="ghost" size="sm">
-          <Link to="/main">← 메인으로 돌아가기</Link>
+          <Link to="/rent">← 메인으로 돌아가기</Link>
         </Button>
       </VStack>
     </Box>

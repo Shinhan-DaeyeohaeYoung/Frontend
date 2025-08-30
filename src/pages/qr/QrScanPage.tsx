@@ -99,7 +99,7 @@ const QrScanPage: React.FC = () => {
 
   return (
     <Flex justify="center" p={4}>
-      <Box w="360px" border="1px dashed" borderColor="gray.300" rounded="md" p={4} bg="white">
+      <Box minW="100%" border="1px dashed" borderColor="gray.300" rounded="md" p={4} bg="white">
         <Heading size="md" mb={4}>
           QR 스캔하기
         </Heading>
@@ -133,14 +133,29 @@ const QrScanPage: React.FC = () => {
             top="50%"
             left="50%"
             transform="translate(-50%, -50%)"
-            w="200px"
-            h="200px"
+            w="250px"
+            h="250px"
             border="2px dashed"
             borderColor="red.400"
             rounded="md"
             pointerEvents="none"
           />
-
+          <Text
+            position="absolute"
+            top="calc(50% + 140px)" // 50% + (가이드 박스 높이 250px의 절반 125px + 여유 15px)
+            left="50%"
+            transform="translateX(-50%)"
+            fontSize="sm"
+            fontWeight="semibold"
+            color="white"
+            bg="blackAlpha.600"
+            px={3}
+            py={1}
+            rounded="md"
+            pointerEvents="none"
+          >
+            빨간 박스 안에 QR을 맞춰주세요
+          </Text>
           {/* 스캐닝 상태 표시 */}
           {isScanning && (
             <Box
@@ -161,12 +176,7 @@ const QrScanPage: React.FC = () => {
 
         <Stack gap={3} mb={4}>
           <HStack justify="space-between">
-            <Button
-              size="sm"
-              onClick={startCamera}
-              disabled={isScanning}
-              colorScheme={isScanning ? 'gray' : 'blue'}
-            >
+            <Button size="sm" onClick={startCamera} disabled={isScanning} bgColor={'accent.500'}>
               {isScanning ? '스캐닝 중' : '카메라 시작'}
             </Button>
             <Button size="sm" variant="outline" onClick={stopCamera} disabled={!isScanning}>
