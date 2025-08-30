@@ -205,9 +205,11 @@ const AdminAccountPage: React.FC = () => {
         최근 거래 내역
       </Text>
       {!loading && !error && transactions.length === 0 && (
-        <Text color="gray.500" fontSize="sm" px={6}>
-          거래 내역이 없습니다.
-        </Text>
+        <Box px={6} py={12} textAlign="center">
+          <Text color="gray.500" fontSize="lg">
+            내역이 없습니다
+          </Text>
+        </Box>
       )}
       {!loading && !error && transactions.length > 0 && (
         <Box>

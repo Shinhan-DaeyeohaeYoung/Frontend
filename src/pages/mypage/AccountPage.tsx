@@ -31,8 +31,9 @@ type BankAccount = {
 };
 
 // ====== [todo]: 엔드포인트 수정 ======
-const EVENTS_ENDPOINT = 'http://43.200.61.108:8082/api/deposits';
-const MY_ACCOUNTS_ENDPOINT = 'http://43.200.61.108:8082/api/users/me/bank-accounts';
+// 하드코딩된 URL 제거하고 상대 경로 사용
+const EVENTS_ENDPOINT = '/deposits';
+const MY_ACCOUNTS_ENDPOINT = '/users/me/bank-accounts';
 
 // ====== 유틸 ======
 function toMMDD(dateIso: string) {
@@ -73,57 +74,6 @@ const AccountPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const res = await getRequest<DepositEvent[]>(EVENTS_ENDPOINT);
-      // setEvents([
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      //   {
-      //     id: 0,
-      //     amount: 0,
-      //     status: 'string',
-      //     created_updated_at: '2025-08-29T13:23:38.520Z',
-      //     organization_name: 'string',
-      //   },
-      // ]);
       setEvents(Array.isArray(res) ? res : []);
     } catch (e: unknown) {
       const errorMessage =
@@ -255,9 +205,11 @@ const AccountPage: React.FC = () => {
         최근 거래 내역
       </Text>
       {!loading && !error && transactions.length === 0 && (
-        <Text color="gray.500" fontSize="sm">
-          거래 내역이 없습니다.
-        </Text>
+        <Box px={6} py={12} textAlign="center">
+          <Text color="gray.500" fontSize="lg">
+            내역이 없습니다
+          </Text>
+        </Box>
       )}
       {!loading && !error && transactions.length > 0 && (
         <Box>
