@@ -360,47 +360,48 @@ export default function QrRentPage() {
 
   // 데이터 렌더링 부분 수정
   return (
-    <Box px={10}>
+    <Box>
       <PageHeader
-        px={0}
+        px={10}
         py={10}
         title={'대여해요'}
         subtitle={'대여하실 물품을 선택해주세요! \n 대여가능시간: 09:00 ~ 18:00 (사무실 운영시간)'}
       ></PageHeader>
 
       {/* QR 토큰 정보 표시 */}
-      {renderQRTokenInfo()}
-
-      <VStack gap={2} align="stretch" mt={2}>
-        {data.map((item) => {
-          return (
-            <Card
-              key={item.rentalId}
-              image={
-                item.photos && item.photos.length > 0 ? (
-                  <Image src={item.photos[0].imageUrl} alt={item.description} />
-                ) : (
-                  <Image src="/placeholder-image.jpg" alt="이미지 없음" />
-                )
-              }
-              title={`${item.assetNo} - ${item.description}`}
-              subtitle={`상태: ${item.unitStatus}`}
-              bottomExtra={
-                <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
-                  <Button
-                    ml="auto"
-                    size="sm"
-                    label={'대여하기'}
-                    onClick={() => {
-                      handleOpenModal(item);
-                    }}
-                  ></Button>
-                </Flex>
-              }
-            ></Card>
-          );
-        })}
-      </VStack>
+      {/* {renderQRTokenInfo()} */}
+      <Box px={10}>
+        <VStack gap={2} align="stretch" mt={2}>
+          {data.map((item) => {
+            return (
+              <Card
+                key={item.rentalId}
+                image={
+                  item.photos && item.photos.length > 0 ? (
+                    <Image src={item.photos[0].imageUrl} alt={item.description} />
+                  ) : (
+                    <Image src="/placeholder-image.jpg" alt="이미지 없음" />
+                  )
+                }
+                title={`${item.assetNo} - ${item.description}`}
+                subtitle={`상태: ${item.unitStatus}`}
+                bottomExtra={
+                  <Flex justify={'space-between'} width={'100%'} align={'flex-end'}>
+                    <Button
+                      ml="auto"
+                      size="sm"
+                      label={'대여하기'}
+                      onClick={() => {
+                        handleOpenModal(item);
+                      }}
+                    ></Button>
+                  </Flex>
+                }
+              ></Card>
+            );
+          })}
+        </VStack>
+      </Box>
     </Box>
   );
 }
