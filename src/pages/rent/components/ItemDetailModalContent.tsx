@@ -16,6 +16,9 @@ import {
 // import StickyActionButton from './StickyActionButton' // 쓰는 중이면
 import { getRequest, postRequest } from '@/api/requests';
 import { Button } from '@/components/Button';
+import { useModalStore } from '@/stores/modalStore';
+import checkIcon from '@/assets/imgs/icon_check.png';
+
 // API 응답 타입 정의 수정 (any 타입 제거)
 interface ItemDetail {
   id: number;
@@ -82,6 +85,8 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
   const [pendingSelectedUnitId, setPendingSelectedUnitId] = useState<number | null>(null);
 
+  const { openModal, closeModal } = useModalStore(); // ✅ 올바른 메서드명 사용
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -145,12 +150,34 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
 
       console.log('홀딩 예약 성공:', reservation);
 
-      // 성공 처리
-      alert(
-        `물품이 30분간 홀딩되었습니다!\n만료시간: ${new Date(
-          reservation.reserveExpiresAt
-        ).toLocaleString('ko-KR')}`
-      );
+      openModal({
+        title: '대여 신청 완료',
+        body: (
+          <VStack w="full" align="center" textAlign="center" gap={4} py={2}>
+            {/* 성공 아이콘 */}
+            <Image src={checkIcon} alt="신청 완료" boxSize="72px" />
+
+            {/* 안내 문구 */}
+            <Text fontSize="md" color="gray.800">
+              물품이{' '}
+              <Text as="span" fontWeight="bold">
+                30분
+              </Text>
+              간 홀딩되었습니다!
+            </Text>
+
+            {/* 만료시간 표시 */}
+            <HStack gap={2}>
+              <Box px={2} py={1} bg="gray.100" rounded="md" fontSize="xs" color="gray.600">
+                만료시간
+              </Box>
+              <Text fontSize="sm" fontFamily="mono" fontWeight="semibold" color="gray.700">
+                {new Date(reservation.reserveExpiresAt).toLocaleString('ko-KR')}
+              </Text>
+            </HStack>
+          </VStack>
+        ),
+      });
 
       // 모달 닫기 (필요시)
       // closeModal();
@@ -221,6 +248,18 @@ export default function ItemDetailModalContent({ itemId }: { itemId: number }) {
     setView('detail');
   };
 
+  // useEffect(() => {
+  //   openModal({
+  //     title: '신청 글 작성',
+  //     caption: '대여 기간과 사유를 입력해 주세요.',
+  //     body: '물품이 30분간 홀딩되었습니다!',
+  //     footer: (
+  //       <HStack gap={2} w="full" justify="center">
+  //         만료시간: ${new Date(reservation.reserveExpiresAt).toLocaleString('ko-KR')}
+  //       </HStack>
+  //     ),
+  //   });
+  // }, []);
   return (
     <Box display="flex" flexDirection="column" h="100%" overflow="hidden">
       <Box

@@ -72,6 +72,7 @@ const Modal = ({
           overflowY={fullscreen ? 'auto' : 'visible'}
           display="flex"
           flexDirection="column"
+          // minH={'340px'}
         >
           {title && (
             <DialogHeader

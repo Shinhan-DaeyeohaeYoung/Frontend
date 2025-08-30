@@ -131,7 +131,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
     },
 
     { label: '반납 승인', onClick: () => navigate('/admin'), category: '관리자' },
-    { label: '물품 등록', onClick: () => navigate('/admin/overview'), category: '관리자' },
+    { label: '물품 관리', onClick: () => navigate('/admin/overview'), category: '관리자' },
     { label: '운영 계좌 관리', onClick: () => navigate('/admin/account'), category: '관리자' },
     { label: '물품 대여 보고서', onClick: () => navigate('/admin/reports'), category: '관리자' },
   ];
