@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { Box, VStack, HStack, Text, Spinner, Image, Checkbox, Button } from '@chakra-ui/react';
 import { getRequest, postRequest } from '@/api/requests';
 import { useAuthStore } from '@/stores/authStore';
+// AI 분석 결과 타입 정의
+interface DamageSuggestion {
+  detail: string;
+  damageRate: number;
+  summary: string;
+}
 
 // 반납 신청 상세 타입 정의
 interface ReturnRequestDetail {
@@ -29,25 +35,61 @@ export default function AprovalDetailModalContent({
   onApproveSuccess,
 }: AprovalDetailModalContentProps) {
   const [data, setData] = useState<ReturnRequestDetail | null>(null);
+  const [damageSuggestion, setDamageSuggestion] = useState<DamageSuggestion | null>(null);
   const [loading, setLoading] = useState(true);
   const [refundDeposit, setRefundDeposit] = useState(false);
   const [approving, setApproving] = useState(false);
 
   const { user } = useAuthStore();
 
+  // AI 분석 결과 가져오기
+  const fetchDamageSuggestion = async (organizationId: number) => {
+    try {
+      const response = await getRequest<DamageSuggestion>(
+        `/admin/return-requests/${returnRequestId}/damage/suggestions?organizationId=${organizationId}`
+      );
+      if (response) {
+        setDamageSuggestion(response);
+        console.log('AI 분석 결과:', response);
+      }
+    } catch (error) {
+      console.error('AI 분석 결과 가져오기 실패:', error);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        if (!mounted) return;
+        if (!mounted || !user?.admin || !user?.organizationInfo) return;
 
-        // returnRequestId로 API 호출
-        const response = await getRequest<ReturnRequestDetail>(
-          `/admin/return-requests/${returnRequestId}`
-        );
+        // admin 값에 따라 적절한 organizationId 선택
+        let organizationId: number | undefined;
+
+        if (user.admin === 'university') {
+          organizationId = user.organizationInfo.university?.id;
+        } else if (user.admin === 'college') {
+          organizationId = user.organizationInfo.college?.id;
+        } else if (user.admin === 'department') {
+          organizationId = user.organizationInfo.department?.id;
+        }
+
+        if (!organizationId) {
+          console.error('조직 ID를 찾을 수 없습니다.');
+          return;
+        }
+
+        // 반납 신청 상세 정보와 AI 분석 결과를 동시에 가져오기
+        const [detailResponse] = await Promise.all([
+          getRequest<ReturnRequestDetail>(
+            `/admin/return-requests/${returnRequestId}?organizationId=${organizationId}`
+          ),
+          fetchDamageSuggestion(organizationId),
+        ]);
+
         if (mounted) {
-          setData(response);
-          console.log('반납 신청 상세:', response);
+          setData(detailResponse);
+          console.log('반납 신청 상세:', detailResponse);
         }
       } catch (error) {
         console.error('반납 신청 상세 가져오기 실패:', error);
@@ -61,7 +103,7 @@ export default function AprovalDetailModalContent({
     return () => {
       mounted = false;
     };
-  }, [returnRequestId]); // 의존성도 변경
+  }, [returnRequestId, user?.admin, user?.organizationInfo]);
 
   // 반납 승인 처리 함수
   const handleApprove = async () => {
@@ -157,29 +199,35 @@ export default function AprovalDetailModalContent({
 
         {/* AI 분석 결과 */}
         <Box bg="gray.50" rounded="sm" p={3} minH="160px">
-          <VStack align="stretch" gap={2}>
-            <HStack justify="space-between">
-              <Text fontSize="sm">초기 상태와 비교했을 때 파손물 %</Text>
-              <Text fontSize="sm" fontWeight="bold" color="green.600">
-                11%
+          <Text fontWeight="semibold" mb={3} color="blue.600">
+            AI 분석 조언
+          </Text>
+          {!damageSuggestion ? (
+            <VStack align="center" justify="center" h="120px">
+              <Spinner size="lg" color="blue.500" />
+              <Text fontSize="sm" color="gray.500">
+                AI가 이미지를 분석하고 있습니다...
               </Text>
-            </HStack>
-            <HStack justify="space-between">
-              <Text fontSize="sm">어디가 파손되어 보이는 지</Text>
-              <Text fontSize="sm" color="green.600">
-                없음
+            </VStack>
+          ) : (
+            <VStack align="stretch" gap={2}>
+              <HStack justify="space-between">
+                <Text fontSize="sm">초기 상태와 비교했을 때 파손물 %</Text>
+                <Text fontSize="sm" fontWeight="bold" color="green.600">
+                  {damageSuggestion.damageRate}%
+                </Text>
+              </HStack>
+              <HStack justify="space-between">
+                <Text fontSize="sm">어디가 파손되어 보이는 지</Text>
+                <Text fontSize="sm" color="green.600">
+                  {damageSuggestion.summary}
+                </Text>
+              </HStack>
+              <Text fontSize="xs" color="gray.500" mt={2}>
+                {damageSuggestion.detail}
               </Text>
-            </HStack>
-            <HStack justify="space-between">
-              <Text fontSize="sm">예상 보증금 차감액?</Text>
-              <Text fontSize="sm" color="green.600">
-                0원
-              </Text>
-            </HStack>
-            <Text fontSize="xs" color="gray.500" mt={2}>
-              (GPT 분석) 승인 버튼 클릭
-            </Text>
-          </VStack>
+            </VStack>
+          )}
         </Box>
 
         {/* 반납 정보 */}
@@ -188,7 +236,7 @@ export default function AprovalDetailModalContent({
             <Text fontSize="sm" color="gray.600">
               대여인:
             </Text>
-            <Text fontSize="sm">사용자 {data.userId}</Text>
+            <Text fontSize="sm">길태은</Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="gray.600">
@@ -198,17 +246,11 @@ export default function AprovalDetailModalContent({
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="gray.600">
-              돌려줄 금액:
+              보증금:
             </Text>
             <Text fontSize="sm" fontWeight="bold">
-              10,000원
+              1,000원
             </Text>
-          </HStack>
-          <HStack justify="space-between">
-            <Text fontSize="sm" color="gray.600">
-              현재 보증금:
-            </Text>
-            <Text fontSize="sm">10,000원</Text>
           </HStack>
         </VStack>
 
