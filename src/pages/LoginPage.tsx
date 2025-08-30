@@ -279,7 +279,7 @@ export default function LoginPage() {
         duration: 3000,
       });
 
-      navigate('/main');
+      navigate('/rent');
     } catch (error: unknown) {
       let errorMessage = '로그인 중 오류가 발생했습니다.';
 
@@ -414,7 +414,7 @@ export default function LoginPage() {
         </Text>
 
         <Button asChild variant="ghost" size="sm">
-          <Link to="/main">메인으로 가기</Link>
+          <Link to="/rent">메인으로 가기</Link>
         </Button>
       </VStack>
     </Box>

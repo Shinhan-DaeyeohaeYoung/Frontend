@@ -51,7 +51,7 @@ export default function AppHeader({
     if (onHomeClick) {
       onHomeClick();
     } else {
-      navigate('/');
+      navigate('/rent');
     }
   };
 

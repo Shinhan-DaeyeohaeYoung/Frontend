@@ -178,9 +178,7 @@ export default function RentPage() {
                     }}
                     disabled={!canRent && !canBook && !isBooked}
                     colorScheme={isBooked ? 'red' : 'blue'}
-                  >
-                    {isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
-                  </Button>
+                  ></Button>
                 </Flex>
               }
             ></Card>

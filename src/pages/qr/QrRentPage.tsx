@@ -199,7 +199,7 @@ export default function QrRentPage() {
           w="full"
           onClick={() => {
             closeModal(); // 모달 닫기
-            navigate('/main'); // 홈으로 이동
+            navigate('/rent'); // 홈으로 이동
           }}
           label="홈으로 가기"
         ></Button>

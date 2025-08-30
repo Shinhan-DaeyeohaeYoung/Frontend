@@ -49,7 +49,7 @@ export default function SignupPage() {
         </Text>
 
         <Button asChild variant="ghost" size="sm">
-          <Link to="/main">메인으로 가기</Link>
+          <Link to="/rent">메인으로 가기</Link>
         </Button>
       </VStack>
     </Box>

@@ -273,7 +273,7 @@ export default function QrReturnPage() {
           <Text color="yellow.600" mt={2}>
             현재 대여 중인 물품이 없거나 모든 물품이 반납되었습니다.
           </Text>
-          <Button mt={4} onClick={() => navigate('/main')} label="홈으로 가기" />
+          <Button mt={4} onClick={() => navigate('/rent')} label="메인으로 가기" />
         </Box>
       );
     }
