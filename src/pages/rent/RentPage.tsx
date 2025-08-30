@@ -179,7 +179,7 @@ export default function RentPage() {
                     <Button
                       ml="auto"
                       size="sm"
-                      label={isBooked ? '예약 취소' : canRent ? '대여하기' : '예약하기'}
+                      label={isBooked ? '예약 취소' : canRent ? '대여신청' : '예약하기'}
                       onClick={() => {
                         if (isBooked) {
                           handleCancelReservation(el.id);
@@ -190,7 +190,7 @@ export default function RentPage() {
                         }
                       }}
                       disabled={!canRent && !canBook && !isBooked}
-                      colorScheme={isBooked ? 'red' : 'blue'}
+                      backgroundColor={isBooked ? 'red.500' : canRent ? 'accent.500' : 'teal.500'}
                     ></Button>
                   </Flex>
                 }

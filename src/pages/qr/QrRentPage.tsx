@@ -1,6 +1,6 @@
 import { Box, Text, VStack, Flex, Image, Badge } from '@chakra-ui/react';
 import { PageHeader } from '@/components/PageHeader';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/Card';
 import { useModalStore } from '@/stores/modalStore';
 import { Button } from '@/components/Button';
@@ -23,7 +23,8 @@ interface QRTokenResponse {
 
 // API 응답 타입 정의
 interface HoldingItem {
-  rentalId: number;
+  id: number; // rental-request ID (API에서 사용할 ID)
+  rentalId: number; // 실제 rental ID
   unitId: number;
   assetNo: string;
   unitStatus: string;
@@ -81,6 +82,7 @@ export default function QrRentPage() {
         // 🔒 중요: QR 토큰의 organizationId와 사용자 소속 조직 비교
         if (!user) {
           setTokenError('사용자 정보를 찾을 수 없습니다.');
+          setTimeout(() => navigate('/qr/scan'), 2000); // 2초 후 스캔 페이지로 이동
           return;
         }
 
@@ -100,6 +102,7 @@ export default function QrRentPage() {
             '해당 조직의 대여 권한이 없습니다. 본인 소속 조직의 QR만 스캔할 수 있습니다.'
           );
           setIsTokenValid(false);
+          setTimeout(() => navigate('/qr/scan'), 3000); // 3초 후 스캔 페이지로 이동
           return;
         }
 
@@ -124,6 +127,9 @@ export default function QrRentPage() {
       } else {
         setTokenError('토큰 검증 중 오류가 발생했습니다.');
       }
+
+      // 에러 발생 시 3초 후 스캔 페이지로 이동
+      setTimeout(() => navigate('/qr/scan'), 3000);
     } finally {
       setIsLoadingToken(false);
     }
@@ -135,6 +141,8 @@ export default function QrRentPage() {
       validateQRToken(token);
     } else {
       setTokenError('QR 토큰이 없습니다.');
+      // 토큰이 없으면 즉시 스캔 페이지로 이동
+      setTimeout(() => navigate('/qr/scan'), 2000);
     }
   }, [token]);
 
@@ -144,12 +152,10 @@ export default function QrRentPage() {
   // 대여 확정 API 호출 함수 추가
   const handleApproveRental = async (item: HoldingItem) => {
     try {
-      // 대여 확정 API 호출 (RESERVED → RENTED)
+      // rentalId 사용 (rental_requests 테이블의 ID)
       const response = await postRequest(`/rental-requests/${item.rentalId}/approve`);
 
       console.log('대여 확정 성공:', response);
-
-      // 성공 시 결과 모달 표시
       handleResultModal();
     } catch (error: unknown) {
       console.error('대여 확정 실패:', error);
@@ -208,7 +214,7 @@ export default function QrRentPage() {
   };
 
   // fetchListData 함수 수정 - QR 토큰의 organizationId 사용
-  const fetchListData = async () => {
+  const fetchListData = useCallback(async () => {
     try {
       // QR 토큰에서 검증된 organizationId 사용
       if (!qrTokenData) {
@@ -251,11 +257,13 @@ export default function QrRentPage() {
       console.error('데이터 가져오기 실패:', error);
       setData([]);
     }
-  };
+  }, [qrTokenData, openModal, navigate]);
 
   useEffect(() => {
-    fetchListData();
-  });
+    if (qrTokenData) {
+      fetchListData();
+    }
+  }, [qrTokenData, fetchListData]);
 
   // QR 토큰 정보 표시 컴포넌트
   const renderQRTokenInfo = () => {
