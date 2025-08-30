@@ -17,19 +17,17 @@ const config = defineConfig({
           500: { value: '#fafaf8' },
         },
         accent: {
-          50: { value: '#F3F2FF' },
-          100: { value: '#E5E3FF' },
-          200: { value: '#D5D3FF' },
-          300: { value: '#CCC9FF' },
-          400: { value: '#C3C0FF' },
-          // 500: { value: '#006AFF' }, //  기준색
-          500: { value: '#7A6FFB' }, //  기준색
-          600: { value: '#9B94F0' },
-          700: { value: '#776ED8' },
-          800: { value: '#5B50B0' },
-          900: { value: '#413589' },
-
-          950: { value: '#2A2166' },
+          50: { value: '#EEEFFF' },
+          100: { value: '#DFE2FF' },
+          200: { value: '#C5C7FF' },
+          300: { value: '#A4A3FE' },
+          400: { value: '#765FF5' },
+          500: { value: '#7A6FFB' }, // ✅ 기준색
+          600: { value: '#6841EA' },
+          700: { value: '#5934CE' },
+          800: { value: '#492DA6' },
+          900: { value: '#3E2C83' },
+          950: { value: '#261A4C' },
         },
       },
       fonts: {
